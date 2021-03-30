@@ -45,6 +45,7 @@ def input_loader(path):
             [
                 os.path.join(path, fname)
                 for fname in os.listdir(path)
+                if fname.endswith(".jpeg")
             ]
         )
         
@@ -58,7 +59,7 @@ def mask_loader(path):
             [
                 os.path.join(path, fname)
                 for fname in os.listdir(path)
-                if fname.endswith(".png")
+                if fname.endswith(".jpeg")
             ]
         )
     

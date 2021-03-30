@@ -26,39 +26,52 @@ import utility_module as utils
 import model_module
 
 #Global variables/hyperparameters
-INPUT_DIR = "C:/Users/Bruger/Desktop/MRI/T2_imgs/2A01_P1_D1/"
-MASK_DIR = "C:/Users/Bruger/Desktop/MRI/T2_masks/mask/"
-BATCH_SIZE = 16
-EPOCHS = 20
+TRAIN_INPUT_DIR = "C:/Users/Bruger/Desktop/MRI/Training/Img"
+TRAIN_MASK_DIR = "C:/Users/Bruger/Desktop/MRI/Training/Mask"
+VALID_INPUT_DIR = "C:/Users/Bruger/Desktop/MRI/Validation/Img"
+VALID_MASK_DIR ="C:/Users/Bruger/Desktop/MRI/Validation/Mask"
+TEST_INPUT_DIR = "C:/Users/Bruger/Desktop/MRI/Test/Img"
+TEST_MASK_DIR ="C:/Users/Bruger/Desktop/MRI/Test/Mask"
+BATCH_SIZE = 20
+EPOCHS = 2
 IMG_SIZE = (512,512)
 NUM_CHANNELS_OUT = 3
 
-#Load image and mask paths
-input_img_paths = utils.input_loader(INPUT_DIR)
-mask_img_paths = utils.mask_loader(MASK_DIR)
+#Load image and mask paths - training
+training_img_paths = utils.input_loader(TRAIN_INPUT_DIR)
+training_mask_paths = utils.mask_loader(TRAIN_MASK_DIR)
 
+#Load image and mask paths - validation
+validation_img_paths = utils.input_loader(VALID_INPUT_DIR)
+validation_mask_paths = utils.mask_loader(VALID_MASK_DIR)
+
+#Load image and mask paths - Test
+test_img_paths = utils.input_loader(TEST_INPUT_DIR)
+test_mask_paths = utils.mask_loader(TEST_MASK_DIR)
 
 #Print paths
-for input_path, target_path in zip(input_img_paths[:], mask_img_paths[:]):
+for input_path, target_path in zip(training_img_paths[:20], training_mask_paths[:20]):
     print(input_path, "|", target_path)
 
-train_gen = utils.make_generator(input_img_paths, mask_img_paths, BATCH_SIZE, IMG_SIZE)#Randomizes lists inlist
+train_gen = utils.make_generator(training_img_paths, training_mask_paths, BATCH_SIZE, IMG_SIZE)#Randomizes lists inlist
+valid_gen = utils.make_generator(validation_img_paths, validation_mask_paths, BATCH_SIZE, IMG_SIZE)#Randomizes lists inlist
+test_gen = utils.make_generator(test_img_paths, test_mask_paths, BATCH_SIZE, IMG_SIZE)#Randomizes lists inlist
 
 print("\n \n")
-for input_path, target_path in zip(input_img_paths[:5], mask_img_paths[:5]): #Check if lists randomized
+for input_path, target_path in zip(training_img_paths[:5], training_mask_paths[:5]): #Check if lists randomized
     print(input_path, "|", target_path)
 
 #Plot of mask and DICOM image
-#utils.plot_img_mask(input_img_paths[2], mask_img_paths[2])
+#utils.plot_img_mask(training_img_paths[2], training_mask_paths[2])
 
 #Get model, input dimensions must match generator. Last dimension added since it must be present
-model = model_module.get_model((512,512,1), NUM_CHANNELS_OUT)
+model = model_module.get_model(IMG_SIZE, NUM_CHANNELS_OUT)
 
 #Train model and get history of training performance
-history, model = model_module.train_model(model, train_gen, train_gen, EPOCHS)
+history, model = model_module.train_model(model, train_gen, valid_gen, EPOCHS)
 
 #Load model from directory
 #model = load_model("Unet_MRI_1-2.h5")#Load
 
 #Validate model and plot image, mask and prediction
-predictions = model_module.test_model(model, train_gen, input_img_paths, mask_img_paths)
+predictions = model_module.test_model(model, test_gen, test_img_paths, test_mask_paths)

@@ -28,15 +28,14 @@ class MRI_generator(keras.utils.Sequence):
         batch_target_img_paths = self.mask_paths[i : i + self.batch_size]
         
         #TODO: Fix image size in numpy array and datatype
-        x = np.zeros((self.batch_size,) + self.img_size + (1,), dtype="uint8") 
+        x = np.zeros((self.batch_size,) + self.img_size + (3,), dtype="float32") #+(3,) since img_size is the same for both input and label
         for j, path in enumerate(batch_input_img_paths):
-            img = pydicom.dcmread(path)
-            img = img.pixel_array
-            x[j] = np.expand_dims(img, 2)
+            img = load_img(path, target_size=self.img_size)
+            x[j] = img
             
         
         #TODO: Fix image size and datatype
-        y = np.zeros((self.batch_size,) + self.img_size + (1,), dtype="uint8")        
+        y = np.zeros((self.batch_size,) + self.img_size + (1,), dtype="uint8") #+(1,) since img_size is the same for both input and label       
         for j, path in enumerate(batch_target_img_paths):
             img = load_img(path, target_size=self.img_size, color_mode="grayscale")
             y[j] = np.expand_dims(img, 2)

@@ -22,7 +22,7 @@ import utility_module as utils
 
 #Make model 
 def get_model(img_size, num_classes):
-    inputs = keras.Input(shape=img_size)
+    inputs = keras.Input(shape=img_size+(3,))
     
     ### [First half of the network: downsampling inputs] ###
 
@@ -103,7 +103,7 @@ def train_model(model, train_generator, validation_generator, epochs):
     plt.show()
     
     #Save model
-    #model.save('Unet_MRI_3-3.h5')
+    model.save('Unet_MRI_3channel.h5')
     
     return history, model
 
