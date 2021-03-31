@@ -19,7 +19,6 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLRO
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 from tensorflow.keras.models import load_model
-import pydicom
 import PIL
 from PIL import ImageOps
 

@@ -17,7 +17,6 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLRO
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 from tensorflow.keras.models import load_model
-import pydicom
 import PIL
 from PIL import ImageOps
 
@@ -43,15 +42,15 @@ training_mask_paths = utils.mask_loader(TRAIN_MASK_DIR)
 
 #Load image and mask paths - validation
 validation_img_paths = utils.input_loader(VALID_INPUT_DIR)
-validation_img_paths = validation_img_paths[:135]#Shorten training time
+validation_img_paths = validation_img_paths[:140]#Shorten training time
 validation_mask_paths = utils.mask_loader(VALID_MASK_DIR)
-validation_mask_paths = validation_mask_paths[:135]#Shorten training time
+validation_mask_paths = validation_mask_paths[:140]#Shorten training time
 
 #Load image and mask paths - Test
 test_img_paths = utils.input_loader(TEST_INPUT_DIR)
-test_img_paths = test_img_paths[:135]#Shorten training time
+test_img_paths = test_img_paths[:140]#Shorten training time
 test_mask_paths = utils.mask_loader(TEST_MASK_DIR)
-test_mask_paths = test_mask_paths[:135]#Shorten training time
+test_mask_paths = test_mask_paths[:140]#Shorten training time
 
 #Print paths
 for input_path, target_path in zip(training_img_paths[:20], training_mask_paths[:20]):
@@ -66,7 +65,7 @@ for input_path, target_path in zip(training_img_paths[:5], training_mask_paths[:
     print(input_path, "|", target_path)
 
 #Plot of mask and image
-#utils.plot_img_mask(validation_img_paths[2], validation_mask_paths[2])
+utils.plot_img_mask(validation_img_paths[2], validation_mask_paths[2])
 
 #Get model, input dimensions must match generator. Last dimension added since it must be present
 model = model_module.get_model(IMG_SIZE, NUM_CHANNELS_OUT)

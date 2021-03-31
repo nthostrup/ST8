@@ -23,7 +23,7 @@ import utility_module as utils
 #Make model 
 def get_model(img_size, num_classes):
     #Input shape, must match the generated images in MRI_Generator class (variable x)
-    inputs = keras.Input(shape=img_size+(3,))
+    inputs = keras.Input(shape=img_size+(1,))
     
     ### [First half of the network: downsampling inputs] ###
 
@@ -76,22 +76,21 @@ def train_model(model, train_generator, validation_generator, epochs):
     model.summary()
     
     #TODO: Implement callbacks
-    #earlystopper = EarlyStopping(patience=5, verbose=1)
-    #checkpointer = ModelCheckpoint('model-dsbowl2018-1.h5', verbose=1, save_best_only=True)
-    #callbacks = [earlystopper, checkpointer]
+    earlystopper = EarlyStopping(patience=5, verbose=1)
+    checkpointer = ModelCheckpoint('model-checkpoint_Unet_MRI.h5', verbose=1, save_best_only=True)
+    callback = [earlystopper, checkpointer]
 
-    #callbacks = [keras.callbacks.ModelCheckpoint("oxford_segmentation.h5", save_best_only=True)]
     
     # Train the model, doing validation at the end of each epoch.
-    #history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callbacks)#Training with callbacks
-    history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator)#Training witout callbacks
+    history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with callbacks
+    #history = model.fit(train_generator, epochs=epochs)#Training with callbacks
     
     #Plot performance from training
     #TODO: Move to utility function
     #acc = history.history['acc']
     #val_acc = history.history['val_acc']
     loss = history.history['loss']
-    val_loss = history.history['val_loss']
+    #val_loss = history.history['val_loss']
     epochs = range(1, len(loss) + 1)
     #plt.plot(epochs, acc, 'bo', label='Training acc')
     #plt.plot(epochs, val_acc, 'b', label='Validation acc')
@@ -100,13 +99,13 @@ def train_model(model, train_generator, validation_generator, epochs):
     
     plt.figure()
     plt.plot(epochs, loss, 'bo', label='Training loss')
-    plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    #plt.plot(epochs, val_loss, 'b', label='Validation loss')
     plt.title('Training and validation loss')
     plt.legend()
     plt.show()
     
     #Save model
-    model.save('Unet_MRI_3channel.h5')
+    model.save('Unet_MRI-1.h5')
     
     return history, model
 
