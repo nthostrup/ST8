@@ -6,6 +6,7 @@ Created on 25. mar. 2021
 from tensorflow import keras
 import numpy as np
 from tensorflow.keras.preprocessing.image import load_img
+from tensorflow.keras.preprocessing.image import img_to_array
 import pydicom
 
 #Class inherited from generic Keras class, which is a generator
@@ -31,6 +32,8 @@ class MRI_generator(keras.utils.Sequence):
         x = np.zeros((self.batch_size,) + self.img_size + (3,), dtype="float32") #+(3,) since img_size is the same for both input and label
         for j, path in enumerate(batch_input_img_paths):
             img = load_img(path, target_size=self.img_size)
+            img_arr = img_to_array(img)
+            img_arr /= 255.
             x[j] = img
             
         
@@ -38,9 +41,12 @@ class MRI_generator(keras.utils.Sequence):
         y = np.zeros((self.batch_size,) + self.img_size + (1,), dtype="uint8") #+(1,) since img_size is the same for both input and label       
         for j, path in enumerate(batch_target_img_paths):
             img = load_img(path, target_size=self.img_size, color_mode="grayscale")
-            y[j] = np.expand_dims(img, 2)
+                        
+            img_arr = img_to_array(img)
+            img_arr /= 255.
+            y[j] = img_arr
             
-            # Ground truth labels are 1, 2, 3. Subtract one to make them 0, 1, 2:
-            y[j] -= 1
+            # Ground truth labels are 0, 1. Divide by 255 to get this range
+            
             
         return x, y

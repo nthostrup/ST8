@@ -22,6 +22,7 @@ import utility_module as utils
 
 #Make model 
 def get_model(img_size, num_classes):
+    #Input shape, must match the generated images in MRI_Generator class (variable x)
     inputs = keras.Input(shape=img_size+(3,))
     
     ### [First half of the network: downsampling inputs] ###
@@ -59,7 +60,8 @@ def get_model(img_size, num_classes):
     x = layers.UpSampling2D(2)(x)
     
     # Add a per-pixel classification layer
-    outputs = layers.Conv2D(num_classes, 3, activation="softmax", padding="same")(x)
+    outputs = layers.Conv2D(num_classes, 3, activation="sigmoid", padding="same")(x)#sigmoid og num_classes =1
+    #Mathias: Antallet af klasser skal være 1, da vi skal have mange pixels med 1 eller 0, og activation skal dermed være sigmoid og loss binary.
     
     model = keras.Model(inputs, outputs)
     
@@ -68,9 +70,9 @@ def get_model(img_size, num_classes):
 #Train model
 def train_model(model, train_generator, validation_generator, epochs):
     #Compile model dependant on output dimensions
-    model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=['acc'])
-    #model.compile(optimizer="adam", loss="binary_crossentropy", metrics=['acc'])#Works with 2 classes as output from model.
-    #model.compile(optimizer="adam", loss="categorical_crossentropy", metrics = [keras.metrics.MeanIoU(num_classes=3)]) #Doesnt work
+    #TODO: Implement metric DICE
+    #Metric MeanIoU:  IOU is defined as follows: IOU = true_positive / (true_positive + false_positive + false_negative
+    model.compile(optimizer="adam", loss="binary_crossentropy", metrics = [keras.metrics.MeanIoU(num_classes=2)])#Works with 2 classes as output from model.
     model.summary()
     
     #TODO: Implement callbacks
@@ -85,16 +87,17 @@ def train_model(model, train_generator, validation_generator, epochs):
     history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator)#Training witout callbacks
     
     #Plot performance from training
-    acc = history.history['acc']
-    val_acc = history.history['val_acc']
+    #TODO: Move to utility function
+    #acc = history.history['acc']
+    #val_acc = history.history['val_acc']
     loss = history.history['loss']
     val_loss = history.history['val_loss']
-    epochs = range(1, len(acc) + 1)
-    plt.plot(epochs, acc, 'bo', label='Training acc')
-    plt.plot(epochs, val_acc, 'b', label='Validation acc')
+    epochs = range(1, len(loss) + 1)
+    #plt.plot(epochs, acc, 'bo', label='Training acc')
+    #plt.plot(epochs, val_acc, 'b', label='Validation acc')
+    #plt.title('Training and validation accuracy')
+    #plt.legend()
     
-    plt.title('Training and validation accuracy')
-    plt.legend()
     plt.figure()
     plt.plot(epochs, loss, 'bo', label='Training loss')
     plt.plot(epochs, val_loss, 'b', label='Validation loss')

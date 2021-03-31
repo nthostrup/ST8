@@ -33,9 +33,9 @@ VALID_MASK_DIR ="C:/Users/Bruger/Desktop/MRI/Validation/Mask"
 TEST_INPUT_DIR = "C:/Users/Bruger/Desktop/MRI/Test/Img"
 TEST_MASK_DIR ="C:/Users/Bruger/Desktop/MRI/Test/Mask"
 BATCH_SIZE = 20
-EPOCHS = 2
+EPOCHS = 20
 IMG_SIZE = (512,512)
-NUM_CHANNELS_OUT = 3
+NUM_CHANNELS_OUT = 1
 
 #Load image and mask paths - training
 training_img_paths = utils.input_loader(TRAIN_INPUT_DIR)
@@ -43,11 +43,15 @@ training_mask_paths = utils.mask_loader(TRAIN_MASK_DIR)
 
 #Load image and mask paths - validation
 validation_img_paths = utils.input_loader(VALID_INPUT_DIR)
+validation_img_paths = validation_img_paths[:135]#Shorten training time
 validation_mask_paths = utils.mask_loader(VALID_MASK_DIR)
+validation_mask_paths = validation_mask_paths[:135]#Shorten training time
 
 #Load image and mask paths - Test
 test_img_paths = utils.input_loader(TEST_INPUT_DIR)
+test_img_paths = test_img_paths[:135]#Shorten training time
 test_mask_paths = utils.mask_loader(TEST_MASK_DIR)
+test_mask_paths = test_mask_paths[:135]#Shorten training time
 
 #Print paths
 for input_path, target_path in zip(training_img_paths[:20], training_mask_paths[:20]):
@@ -61,14 +65,14 @@ print("\n \n")
 for input_path, target_path in zip(training_img_paths[:5], training_mask_paths[:5]): #Check if lists randomized
     print(input_path, "|", target_path)
 
-#Plot of mask and DICOM image
-#utils.plot_img_mask(training_img_paths[2], training_mask_paths[2])
+#Plot of mask and image
+#utils.plot_img_mask(validation_img_paths[2], validation_mask_paths[2])
 
 #Get model, input dimensions must match generator. Last dimension added since it must be present
 model = model_module.get_model(IMG_SIZE, NUM_CHANNELS_OUT)
 
 #Train model and get history of training performance
-history, model = model_module.train_model(model, train_gen, valid_gen, EPOCHS)
+history, model = model_module.train_model(model, valid_gen, test_gen, EPOCHS) #TODO: FEJLER I VALIDATION STEP
 
 #Load model from directory
 #model = load_model("Unet_MRI_1-2.h5")#Load

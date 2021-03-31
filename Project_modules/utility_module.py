@@ -70,10 +70,12 @@ def mask_loader(path):
 def plot_img_mask(img_path,mask_path):
     
     #TODO: Change if input is jpg
-    file_to_open=pydicom.dcmread(img_path)
+    img = load_img(img_path)
+    img_arr = img_to_array(img)
+    img_arr /= 255.
     
     plt.figure()
-    plt.imshow(file_to_open.pixel_array,cmap='gray')
+    plt.imshow(img_arr,cmap='gray')
     
     
     #TODO: Figure out if loading is with plt.imread or keras.image.load_img
