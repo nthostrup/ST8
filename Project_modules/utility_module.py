@@ -88,10 +88,50 @@ def plot_img_mask(img_path,mask_path):
     
     plt.show()
 
+def plot_training_history(history):
+    
+    #Plot performance from training
+    #TODO: Move to utility function
+    #acc = history.history['acc']
+    #val_acc = history.history['val_acc']
+    loss = history.history['loss']
+    #val_loss = history.history['val_loss']
+    epochs = range(1, len(loss) + 1)
+    #plt.plot(epochs, acc, 'bo', label='Training acc')
+    #plt.plot(epochs, val_acc, 'b', label='Validation acc')
+    #plt.title('Training and validation accuracy')
+    #plt.legend()
+    
+    plt.figure()
+    plt.plot(epochs, loss, 'bo', label='Training loss')
+    #plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.legend()
+    plt.show(block=False)
 
 
-
-
-
+def plot_predictions(predictions, input_img_paths, mask_paths):
+    #Selected slice to compare
+    i = 6;
+    #Plots 
+    #plt.subplot(1,2,1)
+    predicted_mask = predictions[i]
+    rounded = np.round(predicted_mask,0)
+    plt.figure()
+    plt.imshow(rounded,cmap='gray')
+    
+    #plt.subplot(1,2,2)
+    #Print paths to ensure that they match
+    print("input path: " + input_img_paths[i])
+    print("mask path: " + mask_paths[i])
+    
+    #Plot MRI and mask via utility module
+    plot_img_mask(input_img_paths[i], mask_paths[i])
+    
+    #Plot mask alone
+    #maskImg=plt.imread(mask_paths[i])
+    #plt.imshow(maskImg,cmap='gray')
+    #plt.show()
+    
 
 

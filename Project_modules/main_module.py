@@ -3,6 +3,7 @@ Created on 31. mar. 2021
 
 @author: Bruger
 '''
+from tensorflow.keras.models import load_model
 
 #Import own modules
 import utility_module as utils
@@ -17,26 +18,28 @@ class main_class:
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
         self.BATCH_SIZE = 20
-        self.EPOCHS = 20
+        self.EPOCHS = 3
         self.IMG_SIZE = (512,512)
         self.NUM_CHANNELS_OUT = 1
-    
+        
+        self.SAMPLES_TO_RUN = -1
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
+        training_img_paths = training_img_paths[:self.SAMPLES_TO_RUN]
         training_mask_paths = utils.mask_loader(self.TRAIN_MASK_DIR)
+        training_mask_paths = training_mask_paths[:self.SAMPLES_TO_RUN]
         
         #Load image and mask paths - validation
         validation_img_paths = utils.input_loader(self.VALID_INPUT_DIR)
-        validation_img_paths = validation_img_paths[:140]#Shorten training time
+        validation_img_paths = validation_img_paths[:self.SAMPLES_TO_RUN]#Shorten training time
         validation_mask_paths = utils.mask_loader(self.VALID_MASK_DIR)
-        validation_mask_paths = validation_mask_paths[:140]#Shorten training time
+        validation_mask_paths = validation_mask_paths[:self.SAMPLES_TO_RUN]#Shorten training time
         
         #Load image and mask paths - Test
         test_img_paths = utils.input_loader(self.TEST_INPUT_DIR)
-        test_img_paths = test_img_paths[:140]#Shorten training time
         test_mask_paths = utils.mask_loader(self.TEST_MASK_DIR)
-        test_mask_paths = test_mask_paths[:140]#Shorten training time
+        
         
         #Print paths
         for input_path, target_path in zip(training_img_paths[:20], training_mask_paths[:20]):
@@ -51,16 +54,23 @@ class main_class:
             print(input_path, "|", target_path)
         
         #Plot of mask and image
-        utils.plot_img_mask(validation_img_paths[2], validation_mask_paths[2])
+        #utils.plot_img_mask(training_img_paths[2], training_mask_paths[2])
         
         #Get model, input dimensions must match generator. Last dimension added since it must be present
         model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
         
         #Train model and get history of training performance
-        history, model = model_module.train_model(model, valid_gen, test_gen, self.EPOCHS) #TODO: FEJLER I VALIDATION STEP
+        history, model = model_module.train_model(model, train_gen, valid_gen, self.EPOCHS) #TODO: FEJLER I VALIDATION STEP
+        
+        #Plot history of training
+        utils.plot_training_history(history)
         
         #Load model from directory
         #model = load_model("Unet_MRI_1-2.h5")#Load
         
         #Validate model and plot image, mask and prediction
-        predictions = model_module.test_model(model, test_gen, test_img_paths, test_mask_paths)
+        predictions = model_module.test_model(model, valid_gen)
+        
+        #Plot predictions
+        utils.plot_predictions(predictions, validation_img_paths, validation_mask_paths)
+        
