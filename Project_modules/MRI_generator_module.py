@@ -31,6 +31,7 @@ class MRI_generator(keras.utils.Sequence):
         #TODO: Should variable img be used directly? In other words shohuld labels be vectors and samples be images?
         x = np.zeros((self.batch_size,) + self.img_size + (1,), dtype="float32") #+(3,) since img_size is the same for both input and label
         for j, path in enumerate(batch_input_img_paths):
+            #print(path)
             img = load_img(path, target_size=self.img_size, color_mode="grayscale")
             img_arr = img_to_array(img)
             x[j] = img_arr
@@ -40,6 +41,7 @@ class MRI_generator(keras.utils.Sequence):
         
         y = np.zeros((self.batch_size,) + self.img_size + (1,), dtype="uint8") #+(1,) since img_size is the same for both input and label       
         for j, path in enumerate(batch_target_img_paths):
+            #print(path)
             img = load_img(path, target_size=self.img_size, color_mode="grayscale")
                         
             img_arr = img_to_array(img)

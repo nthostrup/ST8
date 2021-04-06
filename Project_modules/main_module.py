@@ -4,6 +4,7 @@ Created on 31. mar. 2021
 @author: Bruger
 '''
 from tensorflow.keras.models import load_model
+import tensorflow as tf
 
 #Import own modules
 import utility_module as utils
@@ -18,11 +19,11 @@ class main_class:
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
         self.BATCH_SIZE = 20
-        self.EPOCHS = 3
+        self.EPOCHS = 2
         self.IMG_SIZE = (512,512)
         self.NUM_CHANNELS_OUT = 1
         
-        self.SAMPLES_TO_RUN = -1
+        self.SAMPLES_TO_RUN = 100
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -42,16 +43,23 @@ class main_class:
         
         
         #Print paths
-        for input_path, target_path in zip(training_img_paths[:20], training_mask_paths[:20]):
-            print(input_path, "|", target_path)
+        #for input_path, target_path in zip(training_img_paths[:20], training_mask_paths[:20]):
+        #    print(input_path, "|", target_path)
         
         train_gen = utils.make_generator(training_img_paths, training_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
+        
         valid_gen = utils.make_generator(validation_img_paths, validation_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
+        #validation_data = utils.make_validation_data(validation_img_paths, validation_mask_paths, self.IMG_SIZE) #Tried to make validation data a dataset to avoid error
+        #validation_dataset = tf.data.Dataset.from_tensor_slices(validation_data)
+        #validation_dataset = validation_dataset.batch(20)
+        
         test_gen = utils.make_generator(test_img_paths, test_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
         
-        print("\n \n")
-        for input_path, target_path in zip(training_img_paths[:5], training_mask_paths[:5]): #Check if lists randomized
-            print(input_path, "|", target_path)
+        
+        
+        #print("\n \n")
+        #for input_path, target_path in zip(training_img_paths[:5], training_mask_paths[:5]): #Check if lists randomized
+        #    print(input_path, "|", target_path)
         
         #Plot of mask and image
         #utils.plot_img_mask(training_img_paths[2], training_mask_paths[2])
@@ -66,7 +74,7 @@ class main_class:
         utils.plot_training_history(history)
         
         #Load model from directory
-        #model = load_model("Unet_MRI_1-2.h5")#Load
+        #model = load_model("Unet_MRI-1.h5")#Load
         
         #Validate model and plot image, mask and prediction
         predictions = model_module.test_model(model, valid_gen)
