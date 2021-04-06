@@ -70,19 +70,22 @@ def train_model(model, train_generator, validation_generator, epochs):
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics = [keras.metrics.MeanIoU(num_classes=2)])#Works with 2 classes as output from model.
     model.summary()
     
-    #TODO: Implement callbacks
+    
     earlystopper = EarlyStopping(monitor='loss',patience=5, verbose=1)
     checkpointer = ModelCheckpoint('model-checkpoint_Unet_MRI.h5', verbose=1, save_best_only=True)
     callback = [earlystopper, checkpointer]
 
     
     # Train the model, doing validation at the end of each epoch.
-    #history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation
-    history = model.fit(train_generator, epochs=epochs, callbacks=callback)#Training without validation
+    history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
+    #history = model.fit(train_generator, epochs=epochs, validation_data=validation_data, validation_batch_size=val_batch_size, callbacks=callback)#Training with validation as tuple
+    
+    
+    #history = model.fit(train_generator, epochs=epochs, callbacks=callback)#Training without validation
     
     
     #Save model
-    model.save('Unet_MRI-1.h5')
+    model.save('Unet_MRI-2.h5')
     
     return history, model
 
