@@ -10,6 +10,7 @@ from tensorflow.keras.models import Model, load_model
 from tensorflow.keras import layers
 from tensorflow.python.keras.layers.pooling import MaxPool2D, GlobalMaxPool2D
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from keras.layers.core import Dropout, Lambda
 
 
 #Import own modules
@@ -17,50 +18,45 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLRO
 
 #Make model 
 def get_model(img_size, num_classes):
-    #Input shape, must match the generated images in MRI_Generator class (variable x)
     inputs = keras.Input(shape=img_size+(1,))
-    
-    ### [First half of the network: downsampling inputs] ###
 
-    # Entry block
-    x = layers.Conv2D(32, 3, strides=2, padding="same")(inputs)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation("relu")(x)
-    
-    #Encoder
-    x = layers.Activation("relu")(x)
-    x = layers.Conv2D(64, 3, padding="same")(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
-    
-    x = layers.Activation("relu")(x)
-    x = layers.Conv2D(128, 3, padding="same")(x)
-    x = layers.BatchNormalization()(x)    
-    x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
-    
-    #Decoder
-    x = layers.Activation("relu")(x)
-    x = layers.Conv2DTranspose(128, 3, padding="same")(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.UpSampling2D(2)(x)
-    
-    x = layers.Activation("relu")(x)
-    x = layers.Conv2DTranspose(64, 3, padding="same")(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.UpSampling2D(2)(x)
-    
-    x = layers.Activation("relu")(x)
-    x = layers.Conv2DTranspose(32, 3, padding="same")(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.UpSampling2D(2)(x)
-    
-    # Add a per-pixel classification layer
-    outputs = layers.Conv2D(num_classes, 3, activation="sigmoid", padding="same")(x)#sigmoid og num_classes =1
-    #Mathias: Antallet af klasser skal være 1, da vi skal have mange pixels med 1 eller 0, og activation skal dermed være sigmoid og loss binary.
-    
-    model = keras.Model(inputs, outputs)
-    
+    c1 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(inputs)
+    c1 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(c1)
+    p1 = layers.MaxPooling2D((2, 2))(c1)
+
+    c2 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(p1)
+    c2 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(c2)
+    p2 = layers.MaxPooling2D((2, 2))(c2)
+
+    c3 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(p2)
+    c3 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c3)
+    p3 = layers.MaxPooling2D((2, 2))(c3)
+
+    c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(p3)
+    c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(c4)
+
+    u5 = layers.Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c4)
+    u5 = layers.concatenate([u5, c3])
+    c5 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(u5)
+    c5 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c5)
+
+    u6 = layers.Conv2DTranspose(32, (2, 2), strides=(2, 2), padding='same')(c5)
+    u6 = layers.concatenate([u6, c2])
+    c6 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(u6)
+    c6 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(c6)
+
+    u7 = layers.Conv2DTranspose(16, (2, 2), strides=(2, 2), padding='same')(c6)
+    u7 = layers.concatenate([u7, c1])
+    c7 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(u7)
+    c7 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(c7)
+
+    outputs = layers.Conv2D(1, (1, 1), activation='sigmoid')(c7)
+
+    model = Model(inputs=[inputs], outputs=[outputs])
+    print(outputs)
+
     return model
+
 
 #Train model
 def train_model(model, train_generator, validation_generator, epochs):
@@ -70,12 +66,10 @@ def train_model(model, train_generator, validation_generator, epochs):
     model.compile(optimizer="adam", loss="binary_crossentropy", metrics = [keras.metrics.MeanIoU(num_classes=2)])#Works with 2 classes as output from model.
     model.summary()
     
-    
-    earlystopper = EarlyStopping(monitor='loss',patience=5, verbose=1)
-    checkpointer = ModelCheckpoint('model-checkpoint_Unet_MRI.h5', verbose=1, save_best_only=True)
+    earlystopper = EarlyStopping(monitor='val_loss',patience=5, verbose=1)
+    checkpointer = ModelCheckpoint('model-checkpoint_Unet_MRI.h5', monitor='val_loss', verbose=1, save_best_only=True)
     callback = [earlystopper, checkpointer]
 
-    
     # Train the model, doing validation at the end of each epoch.
     history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
     #history = model.fit(train_generator, epochs=epochs, validation_data=validation_data, validation_batch_size=val_batch_size, callbacks=callback)#Training with validation as tuple
@@ -85,7 +79,7 @@ def train_model(model, train_generator, validation_generator, epochs):
     
     
     #Save model
-    model.save('Unet_MRI-2.h5')
+    #model.save('Unet_MRI-2.h5')
     
     return history, model
 
