@@ -5,6 +5,11 @@ Created on 31. mar. 2021
 '''
 from tensorflow.keras.models import load_model
 import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.models import Model, load_model
+from tensorflow.keras import layers
+from tensorflow.python.keras.layers.pooling import MaxPool2D, GlobalMaxPool2D
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
 #Import own modules
 import utility_module as utils
@@ -68,8 +73,8 @@ class main_class:
         model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
         
         #Train model and get history of training performance
-        history, model = model_module.train_model(model, train_gen, valid_gen, self.EPOCHS) #TODO: FEJLER I VALIDATION STEP
-        
+        history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
+               
         #Plot history of training
         utils.plot_training_history(history)
         
@@ -82,3 +87,23 @@ class main_class:
         #Plot predictions
         utils.plot_predictions(predictions, validation_img_paths, validation_mask_paths)
         
+    def train_model(self,model, train_generator, validation_generator, epochs):
+        #Compile model dependant on output dimensions
+        #TODO: Implement metric DICE
+        #Metric MeanIoU:  IOU is defined as follows: IOU = true_positive / (true_positive + false_positive + false_negative
+        model.compile(optimizer="adam", loss="binary_crossentropy", metrics = [keras.metrics.MeanIoU(num_classes=2)])#Works with 2 classes as output from model.
+        model.summary()
+        
+        
+        earlystopper = EarlyStopping(monitor='val_loss',patience=5, verbose=1)
+        checkpointer = ModelCheckpoint('model-checkpoint_Unet_MRI.h5', verbose=1, monitor='val_loss', save_best_only=True)
+        callback = [earlystopper, checkpointer]
+    
+        
+        # Train the model, doing validation at the end of each epoch.
+        history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
+               
+        #Save model
+        model.save('Unet_MRI-2.h5')
+        
+        return history, model

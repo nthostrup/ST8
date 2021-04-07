@@ -62,32 +62,6 @@ def get_model(img_size, num_classes):
     
     return model
 
-#Train model
-def train_model(model, train_generator, validation_generator, epochs):
-    #Compile model dependant on output dimensions
-    #TODO: Implement metric DICE
-    #Metric MeanIoU:  IOU is defined as follows: IOU = true_positive / (true_positive + false_positive + false_negative
-    model.compile(optimizer="adam", loss="binary_crossentropy", metrics = [keras.metrics.MeanIoU(num_classes=2)])#Works with 2 classes as output from model.
-    model.summary()
-    
-    
-    earlystopper = EarlyStopping(monitor='loss',patience=5, verbose=1)
-    checkpointer = ModelCheckpoint('model-checkpoint_Unet_MRI.h5', verbose=1, save_best_only=True)
-    callback = [earlystopper, checkpointer]
-
-    
-    # Train the model, doing validation at the end of each epoch.
-    history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
-    #history = model.fit(train_generator, epochs=epochs, validation_data=validation_data, validation_batch_size=val_batch_size, callbacks=callback)#Training with validation as tuple
-    
-    
-    #history = model.fit(train_generator, epochs=epochs, callbacks=callback)#Training without validation
-    
-    
-    #Save model
-    model.save('Unet_MRI-2.h5')
-    
-    return history, model
 
 #Test model with test data(or other data) and plot prediction vs. image vs. true mask
 def test_model(model,test_generator):
@@ -98,9 +72,6 @@ def test_model(model,test_generator):
     
     
     predictions = model.predict(test_generator, steps = 1)
-    
-    
-    
     
     
     return predictions

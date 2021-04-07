@@ -37,32 +37,6 @@ def make_generator(input_img_paths, mask_paths, batch_size, img_size):
     
     return generator
 
-#Obsolete if validation data is used as generators.
-#This function returns validation data as tensors, however memory may be bottleneck if dataset is large
-def make_validation_data(input_img_paths, mask_paths, img_size):
-    random.Random(1337).shuffle(input_img_paths)
-    random.Random(1337).shuffle(mask_paths)
-    
-    x = np.zeros((len(input_img_paths),) + (img_size) + (1,), dtype="float32") #+(3,) since img_size is the same for both input and label
-    for j, path in enumerate(input_img_paths):
-        
-        img = load_img(path, target_size=img_size, color_mode="grayscale")
-        img_arr = img_to_array(img)
-        x[j] = img_arr
-            
-        
-        #TODO: Fix image size and datatype
-        
-    y = np.zeros((len(mask_paths),) + (img_size) + (1,), dtype="uint8") #+(1,) since img_size is the same for both input and label       
-    for j, path in enumerate(mask_paths):
-        
-        img = load_img(path, target_size=img_size, color_mode="grayscale")
-                    
-        img_arr = img_to_array(img)
-        img_arr /= 255.
-        y[j] = img_arr
-        
-    return (x,y)
 
 #Load MRI images
 def input_loader(path):
@@ -122,7 +96,7 @@ def plot_training_history(history):
     #acc = history.history['acc']
     #val_acc = history.history['val_acc']
     loss = history.history['loss']
-    #val_loss = history.history['val_loss']
+    val_loss = history.history['val_loss']
     epochs = range(1, len(loss) + 1)
     #plt.plot(epochs, acc, 'bo', label='Training acc')
     #plt.plot(epochs, val_acc, 'b', label='Validation acc')
@@ -131,7 +105,7 @@ def plot_training_history(history):
     
     plt.figure()
     plt.plot(epochs, loss, 'bo', label='Training loss')
-    #plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    plt.plot(epochs, val_loss, 'b', label='Validation loss')
     plt.title('Training and validation loss')
     plt.legend()
     plt.show(block=False)
