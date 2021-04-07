@@ -54,10 +54,7 @@ class main_class:
         train_gen = utils.make_generator(training_img_paths, training_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
         
         valid_gen = utils.make_generator(validation_img_paths, validation_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
-        #validation_data = utils.make_validation_data(validation_img_paths, validation_mask_paths, self.IMG_SIZE) #Tried to make validation data a dataset to avoid error
-        #validation_dataset = tf.data.Dataset.from_tensor_slices(validation_data)
-        #validation_dataset = validation_dataset.batch(20)
-        
+               
         test_gen = utils.make_generator(test_img_paths, test_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
         
         
