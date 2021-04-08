@@ -69,7 +69,6 @@ def mask_loader(path):
 #Helper to plot image and mask pair
 def plot_img_mask(img_path,mask_path):
     
-    #TODO: Change if input is jpg
     img = load_img(img_path)
     img_arr = img_to_array(img)
     img_arr /= 255.
@@ -77,9 +76,7 @@ def plot_img_mask(img_path,mask_path):
     plt.figure()
     plt.imshow(img_arr,cmap='gray')
     
-    
-    #TODO: Figure out if loading is with plt.imread or keras.image.load_img
-    
+       
     #maskImg=load_img(mask_path, color_mode="grayscale")
     #maskImg=np.expand_dims(maskImg, 2)
     
@@ -92,16 +89,18 @@ def plot_img_mask(img_path,mask_path):
 def plot_training_history(history):
     
     #Plot performance from training
-    #TODO: Move to utility function
+    #TODO: Consider plotting dice measure
     #acc = history.history['acc']
     #val_acc = history.history['val_acc']
-    loss = history.history['loss']
-    val_loss = history.history['val_loss']
-    epochs = range(1, len(loss) + 1)
     #plt.plot(epochs, acc, 'bo', label='Training acc')
     #plt.plot(epochs, val_acc, 'b', label='Validation acc')
     #plt.title('Training and validation accuracy')
     #plt.legend()
+    
+    
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+    epochs = range(1, len(loss) + 1)
     
     plt.figure()
     plt.plot(epochs, loss, 'bo', label='Training loss')
@@ -113,7 +112,7 @@ def plot_training_history(history):
 
 def plot_predictions(predictions, input_img_paths, mask_paths):
     #Selected slice to compare
-    i = 2;
+    i = 7;
     #Plots 
     #plt.subplot(1,2,1)
     predicted_mask = predictions[i]

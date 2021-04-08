@@ -24,11 +24,11 @@ class main_class:
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
         self.BATCH_SIZE = 20
-        self.EPOCHS = 2
+        self.EPOCHS = 5
         self.IMG_SIZE = (512,512)
         self.NUM_CHANNELS_OUT = 1
         
-        self.SAMPLES_TO_RUN = 100
+        self.SAMPLES_TO_RUN = 1000
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -76,7 +76,7 @@ class main_class:
         utils.plot_training_history(history)
         
         #Load model from directory
-        #model = load_model("Unet_MRI-1.h5")#Load
+        #model = load_model("Unet_MRI-2.h5")#Load
         
         #Validate model and plot image, mask and prediction
         predictions = model_module.test_model(model, valid_gen)
@@ -98,6 +98,7 @@ class main_class:
     
         
         # Train the model, doing validation at the end of each epoch.
+        #TODO: Maybe add validation_steps = 5 to speed up validation step
         history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
                
         #Save model
