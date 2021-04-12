@@ -10,7 +10,7 @@ from tensorflow.keras.models import Model, load_model
 from tensorflow.keras import layers
 from tensorflow.python.keras.layers.pooling import MaxPool2D, GlobalMaxPool2D
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from keras.layers.core import Dropout, Lambda
+from tensorflow.keras.layers import Dropout, Lambda
 
 
 #Import own modules
