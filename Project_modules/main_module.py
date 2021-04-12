@@ -24,11 +24,11 @@ class main_class:
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
         self.BATCH_SIZE = 20
-        self.EPOCHS = 15
+        self.EPOCHS = 10
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
-        self.SAMPLES_TO_RUN = 100
+        self.SAMPLES_TO_RUN = 500
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -90,7 +90,7 @@ class main_class:
         #Compile model dependant on output dimensions
         #TODO: Implement metric DICE
         #Metric MeanIoU:  IOU is defined as follows: IOU = true_positive / (true_positive + false_positive + false_negative
-        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=['acc', utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
+        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
         model.summary()
 
 
@@ -103,6 +103,6 @@ class main_class:
         history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
 
         #Save model
-        model.save('Unet_MRI-2.h5')
+        model.save('Unet_MRI-3.h5')
 
         return history, model
