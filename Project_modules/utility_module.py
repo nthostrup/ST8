@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow import keras
-from keras import backend as K
+from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Input, BatchNormalization, Activation, Dense, Dropout, Conv2D, Conv2DTranspose, concatenate
 from tensorflow.python.keras.layers.pooling import MaxPool2D, GlobalMaxPool2D
@@ -37,32 +37,6 @@ def make_generator(input_img_paths, mask_paths, batch_size, img_size):
     
     return generator
 
-#Obsolete if validation data is used as generators.
-#This function returns validation data as tensors, however memory may be bottleneck if dataset is large
-def make_validation_data(input_img_paths, mask_paths, img_size):
-    random.Random(1337).shuffle(input_img_paths)
-    random.Random(1337).shuffle(mask_paths)
-    
-    x = np.zeros((len(input_img_paths),) + (img_size) + (1,), dtype="float32") #+(3,) since img_size is the same for both input and label
-    for j, path in enumerate(input_img_paths):
-        
-        img = load_img(path, target_size=img_size, color_mode="grayscale")
-        img_arr = img_to_array(img)
-        x[j] = img_arr
-            
-        
-        #TODO: Fix image size and datatype
-        
-    y = np.zeros((len(mask_paths),) + (img_size) + (1,), dtype="uint8") #+(1,) since img_size is the same for both input and label       
-    for j, path in enumerate(mask_paths):
-        
-        img = load_img(path, target_size=img_size, color_mode="grayscale")
-                    
-        img_arr = img_to_array(img)
-        img_arr /= 255.
-        y[j] = img_arr
-        
-    return (x,y)
 
 #Load MRI images
 def input_loader(path):
