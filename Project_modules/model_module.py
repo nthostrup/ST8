@@ -11,6 +11,7 @@ from tensorflow.keras import layers
 from tensorflow.python.keras.layers.pooling import MaxPool2D, GlobalMaxPool2D
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.keras.layers import Dropout, Lambda
+from tensorflow.python.keras.layers.convolutional import UpSampling2D
 
 
 #Import own modules
@@ -35,17 +36,20 @@ def get_model(img_size, num_classes):
     c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(p3)
     c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(c4)
 
-    u5 = layers.Conv2DTranspose(64, (2, 2), strides=(2, 2), padding='same')(c4)
+    u5 = layers.Conv2DTranspose(64, (3, 3), padding='same')(c4)
+    u5 = UpSampling2D((2,2))(u5)
     u5 = layers.concatenate([u5, c3])
     c5 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(u5)
     c5 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c5)
 
-    u6 = layers.Conv2DTranspose(32, (2, 2), strides=(2, 2), padding='same')(c5)
+    u6 = layers.Conv2DTranspose(32, (3, 3), padding='same')(c5)
+    u6 = UpSampling2D((2,2))(u6)
     u6 = layers.concatenate([u6, c2])
     c6 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(u6)
     c6 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(c6)
 
-    u7 = layers.Conv2DTranspose(16, (2, 2), strides=(2, 2), padding='same')(c6)
+    u7 = layers.Conv2DTranspose(16, (3, 3), padding='same')(c6)
+    u7 = UpSampling2D((2,2))(u7)
     u7 = layers.concatenate([u7, c1])
     c7 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(u7)
     c7 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(c7)
@@ -63,7 +67,7 @@ def test_model(model,test_generator):
         
     #TODO: Evaluate with some sample images (x_test) and ground truth masks (y_test)
     #result = model.evaluate(x_test,y_test, batch_size=32)
-    loss, accuracy, f1_score, precision, recall = model.evaluate(test_generator, verbose=1)
+    loss, f1_score, precision, recall = model.evaluate(test_generator, verbose=1)
 
     predictions = model.predict(test_generator, steps=1)
 
