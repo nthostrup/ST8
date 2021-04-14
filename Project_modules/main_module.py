@@ -15,6 +15,8 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLRO
 import utility_module as utils
 import model_module
 
+output_data = '/output_data'
+
 class main_class:
     def __init__(self, train_input_dir,train_mask_dir,valid_input_dir,valid_mask_dir,test_input_dir,test_mask_dir):
         self.TRAIN_INPUT_DIR = train_input_dir
@@ -28,7 +30,7 @@ class main_class:
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
-        self.SAMPLES_TO_RUN = 500
+        self.SAMPLES_TO_RUN = 100
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -70,19 +72,21 @@ class main_class:
         model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
 
         #Train model and get history of training performance
-        history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
+        #history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
 
         #Plot history of training
-        utils.plot_training_history(history)
+        #utils.plot_training_history(history)
 
 
         #Load model from directory
-        #model = load_model("Unet_MRI-1.h5")#Load
-
+        model = load_model("Unet_MRI-4.h5",custom_objects={"f1_m":utils.f1_m,"precision_m":utils.precision_m,"recall_m":utils.recall_m})
+        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
+        
         #Validate model and plot image, mask and prediction
         predictions, f1_score = model_module.test_model(model, valid_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
         print('The dice similarity score is:', f1_score)
 
+        
         #Plot predictions
         utils.plot_predictions(predictions, validation_img_paths, validation_mask_paths)
 
@@ -103,6 +107,6 @@ class main_class:
         history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
 
         #Save model
-        model.save('Unet_MRI-3.h5')
+        model.save('Unet_MRI-4.h5')
 
         return history, model
