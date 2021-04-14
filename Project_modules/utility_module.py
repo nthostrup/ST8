@@ -7,7 +7,6 @@ Created on 25. mar. 2021
 
 import os
 import random
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow import keras
@@ -19,8 +18,7 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLRO
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
 from tensorflow.keras.models import load_model
-import PIL
-from PIL import ImageOps
+
 
 #Import own modules
 import MRI_generator_module
@@ -112,7 +110,7 @@ def plot_training_history(history):
 
 def plot_predictions(predictions, input_img_paths, mask_paths):
     #Selected slice to compare
-    i = 7;
+    i = 5;
     #Plots 
     #plt.subplot(1,2,1)
     predicted_mask = predictions[i]
