@@ -134,7 +134,7 @@ def plot_predictions(predictions, input_img_paths, mask_paths):
 def recall_m(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    recall = true_positives / (possible_positives + K.epsilon())
+    recall = true_positives / (possible_positives + K.epsilon()) #sensitivitet 
     return recall
 
 def precision_m(y_true, y_pred):
@@ -147,3 +147,28 @@ def f1_m(y_true, y_pred):
     precision = precision_m(y_true, y_pred)
     recall = recall_m(y_true, y_pred)
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
+
+def dice_pixelwise_variables(y_true, y_pred):
+    TP = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    TP = np.multiply(TP, 1.0) #typecast to float
+    
+    truemask_negative=(K.round(K.clip(y_true, 0, 1))==0) # 1 when truemask is black 
+    predmask_positive=(K.round(K.clip(y_pred, 0, 1))==1) # 1 when predmask is white 
+    truemask_positive=(K.round(K.clip(y_true, 0, 1))==1) # 1 when truemask is white
+    predmask_negative=(K.round(K.clip(y_pred, 0, 1))==0) # 1 when predmask is black 
+    
+    FP_temp=(truemask_negative & predmask_positive)
+    FP_temp=np.multiply(FP_temp, 1.0) #convert from false, true.. to 0, 1... 
+    FP=K.sum(FP_temp)
+    
+    FN_temp = (truemask_positive & predmask_negative)
+    FN_temp = np.multiply(FN_temp, 1.0)
+    FN=K.sum(FN_temp) 
+    #FP = K.sum((K.round(K.clip(y_true, 0, 1))==0) & (K.round(K.clip(y_pred, 0, 1))==1))
+    #FN = K.sum((K.round(K.clip(y_true, 0, 1))==1) & (K.round(K.clip(y_pred, 0, 1))==0)) 
+    return TP,FP,FN
+
+def dice_pixelwise(TP,FP,FN):
+    dice=(2*TP)/((TP+FP)+(TP+FN))
+    return dice
+    

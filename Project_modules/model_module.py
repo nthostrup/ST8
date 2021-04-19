@@ -13,7 +13,8 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLRO
 from tensorflow.keras.layers import Dropout, Lambda
 from tensorflow.python.keras.layers.convolutional import UpSampling2D
 from tensorflow.python.keras.layers.normalization import BatchNormalization
-
+import utility_module as utils
+import numpy as np
 
 #Import own modules
 
@@ -36,7 +37,8 @@ def get_model(img_size, num_classes):
 
     c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(p3)
     c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(c4)
-    
+
+
     
 
     u5 = layers.Conv2D(64, (3, 3), padding='same')(c4)
@@ -70,11 +72,23 @@ def test_model(model,test_generator):
         
     #TODO: Evaluate with some sample images (x_test) and ground truth masks (y_test)
     #result = model.evaluate(x_test,y_test, batch_size=32)
+    print("model.evaluate")
     loss, f1_score, precision, recall = model.evaluate(test_generator, verbose=1)
-
-    predictions = model.predict(test_generator, steps=1)
-
     
+    n_batch=1; 
+    predictions = model.predict(test_generator, steps=n_batch)
+    predictions_batch =predictions[n_batch-1:n_batch*10]
     
-    return predictions, f1_score
+    #determine ground truth
+    inputs, mask = test_generator.__getitem__(n_batch-1) #getitem input is batchindex. 
+    true_mask = mask.astype('float32') 
+    
+    TP, FP, FN = utils.dice_pixelwise_variables(true_mask, predictions_batch)
+    #calculate variables for pixelwisedice 
+    print("TP:",TP,"FP:",FP,"FN:",FN)
+    dice_pixelw=utils.dice_pixelwise(TP, FP, FN)
+    print("Pixelwise Dice is: ")
+    print(dice_pixelw)
+    
+    return predictions, loss, f1_score, precision, recall
 

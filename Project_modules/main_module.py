@@ -14,6 +14,7 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLRO
 #Import own modules
 import utility_module as utils
 import model_module
+import MRI_generator_module
 
 output_data = '/output_data'
 
@@ -25,12 +26,12 @@ class main_class:
         self.VALID_MASK_DIR = valid_mask_dir
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
-        self.BATCH_SIZE = 20
+        self.BATCH_SIZE = 10
         self.EPOCHS = 10
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
-        self.SAMPLES_TO_RUN = 100
+        self.SAMPLES_TO_RUN = 20
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -69,7 +70,7 @@ class main_class:
         #utils.plot_img_mask(training_img_paths[2], training_mask_paths[2])
 
         #Get model, input dimensions must match generator. Last dimension added since it must be present
-        model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
+        #model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
 
         #Train model and get history of training performance
         #history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
@@ -83,9 +84,7 @@ class main_class:
         model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
         
         #Validate model and plot image, mask and prediction
-        predictions, f1_score = model_module.test_model(model, valid_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
-        print('The dice similarity score is:', f1_score)
-
+        predictions, loss, f1_score, precision, recall = model_module.test_model(model, valid_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model        print('The dice similarity score is:', f1_score)
         
         #Plot predictions
         utils.plot_predictions(predictions, validation_img_paths, validation_mask_paths)
