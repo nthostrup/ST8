@@ -16,6 +16,7 @@ from tensorflow.keras.layers import Dropout, Lambda
 
 
 #Import own modules
+import MRI_generator_module
 
 
 #Make model 
@@ -60,21 +61,60 @@ def get_model(img_size, num_classes):
     return model
 
 #Test model with test data(or other data) and plot prediction vs. image vs. true mask
-def test_model(model,test_generator, validation_mask_paths):
-    #TODO: Maybe calculate dice based on prediction and ground truth
-        
-    #TODO: Evaluate with some sample images (x_test) and ground truth masks (y_test)
-    #result = model.evaluate(x_test,y_test, batch_size=32) ,   loss, accuracy, f1_score, precision, recall
-
-    loss, accuracy, f1_score, precision, recall = model.evaluate(test_generator, verbose=1)
-    print(f1_score)
+def test_model(model, test_generator, validation_mask_paths):
+    """Calculates the metrics on single images, and afterwards take the mean of all images"""
+    # kræver på nuværende tidspunkt at batchsize = 1 - det kan man evt. definere inden denne metode kaldes.
 
     # prøv at tjekke om den kører pr. sample eller pr. batch. Evt. lave en løkke så vi kun får en dice pr. billede og derefter mean
     # Undersøge pixel wise dice eller gennemsnit pr. billede
-    predictions = model.predict(test_generator, steps=1)
 
+    predictions = []
+    f1_scores = []
+    recalls = []
+    precisions = []
+    for k in range(validation_mask_paths.__len__()*test_generator.batch_size):
+        print(k)
+        inputs, mask = test_generator.__getitem__(k)
+        mask = mask.astype('float32')   # typecast fra uint8 til float32
+        #print("Inputs:", inputs)
+        #print("X axis size of inputs:", np.size(inputs, 0))        # Input dimensioner i x aksen (rækker) Batchsizex512x512
+        #print("Y axis size of inputs:", np.size(inputs, 1))        # Input dimensioner i y aksen (kolonner)
+        #print("Z axis size of inputs:", np.size(inputs, 2))        # Input dimensioner i y aksen (kolonner)
+        prediction = model.predict(inputs)  #Lav single prediction på item k
+        predictions.append(prediction)  #Save in array
+        #print("Predictions:", prediction)
+        #print("X axis size of predictions:", np.size(prediction, 0))
+        #print("Y axis size of predictions:", np.size(prediction, 1))
+        #print("Z axis size of predictions:", np.size(prediction, 2))
+        f1_test = utils.f1_m(y_true=mask, y_pred=prediction)    #beregn f1 score for single prediction
 
-    f1_test = utils.f1_m(predictions, test_generator[3])
-    print(f1_test)
+        recall = utils.recall_m(mask, prediction)
+        precision = utils.precision_m(mask, prediction)
+        if f1_test is not None:
+            f1_scores.append(f1_test)   #Save in array
+            recalls.append(recall)
+            precisions.append(precision)
+            #print("F1 scores:", f1_test)
+            #print("Len of F1scores:", len(f1_scores))
 
-    return predictions, loss, accuracy, f1_score, precision, recall
+    print(f1_scores[0])
+    print(f1_scores[1])
+    print(f1_scores[2])
+    print(f1_scores[3])
+    print(f1_scores[4])
+    print(f1_scores[5])
+    print(f1_scores[6])
+    print(f1_scores[7])
+    print(f1_scores[8])
+    print(f1_scores[9])
+    print(f1_scores[10])
+
+    mean_f1 = np.mean(f1_scores)
+    mean_recall = np.mean(recalls)
+    mean_precision = np.mean(precisions)
+    print("Mean f1", mean_f1)
+    print("Mean recall", mean_recall)
+    print("Mean precision", mean_precision)
+
+    return predictions, mean_f1, mean_recall, mean_precision
+

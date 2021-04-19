@@ -113,11 +113,12 @@ def plot_training_history(history):
 
 def plot_predictions(predictions, input_img_paths, mask_paths):
     #Selected slice to compare
-    i = 4
+    i = 21
     #Plots 
     #plt.subplot(1,2,1)
     predicted_mask = predictions[i]
-    rounded = np.round(predicted_mask, 0)
+    predicted_mask = np.squeeze(predicted_mask)
+    rounded = np.round(predicted_mask, 0)   #afrunder =>0.50 = 1      <0.50 = 0
     plt.figure()
     plt.imshow(rounded, cmap='gray')
     
@@ -147,7 +148,22 @@ def precision_m(y_true, y_pred):
     return precision
 
 def f1_m(y_true, y_pred):
+    #f1_scores = []
+    #recalls = []
+    #precisions = []
+    #for k in y_true[0]:
+
+
+    """ Dette er tjekket for om der er en tom maske med en tom prediction - det virker ikke lige nu for model.fit
+    nonzero_labels = np.count_nonzero(y_true)
+    rounded = np.round(y_pred, 0)   #afrunder =>0.50 = 1      <0.50 = 0
+    nonzero_predictions = np.count_nonzero(rounded)
+    if nonzero_labels == 0 and nonzero_predictions <= 5:
+        return None
+        """
+
     precision = precision_m(y_true, y_pred)
     recall = recall_m(y_true, y_pred)
+
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
 

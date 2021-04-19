@@ -23,12 +23,13 @@ class main_class:
         self.VALID_MASK_DIR = valid_mask_dir
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
-        self.BATCH_SIZE = 20
-        self.EPOCHS = 15
+        self.BATCH_SIZE = 10
+        self.BATCH_SIZE_TRAIN_GEN = 1   #Når jeg kører testdata igennem fungerer det kun med batchsize 1 - så kommer alle samples ind.
+        self.EPOCHS = 2
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
-        self.SAMPLES_TO_RUN = 100
+        self.SAMPLES_TO_RUN = 32
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -55,6 +56,8 @@ class main_class:
 
         valid_gen = utils.make_generator(validation_img_paths, validation_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
 
+        valid_gen_2 = utils.make_generator(validation_img_paths, validation_mask_paths, self.BATCH_SIZE_TRAIN_GEN, self.IMG_SIZE)#Randomizes lists inlist
+
         test_gen = utils.make_generator(test_img_paths, test_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
 
 
@@ -64,29 +67,31 @@ class main_class:
         #    print(input_path, "|", target_path)
 
         #Plot of mask and image
-        #utils.plot_img_mask(training_img_paths[2], training_mask_paths[2])
+        utils.plot_img_mask(training_img_paths[2], training_mask_paths[2])
 
         #Get model, input dimensions must match generator. Last dimension added since it must be present
-        #model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
+        model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
 
         #Train model and get history of training performance
-        #history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
+        history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
 
         #Plot history of training
-        #utils.plot_training_history(history)
+        utils.plot_training_history(history)
 
 
         #Load model from directory
-        model = load_model("model-checkpoint_Unet_MRI_first.h5",
-                           custom_objects={"f1_m": utils.f1_m, "precision_m": utils.precision_m,
-                                           "recall_m": utils.recall_m})
+        #model = load_model("Unet_MRI-4.h5",
+                           #custom_objects={"f1_m": utils.f1_m, "precision_m": utils.precision_m,
+                                 #          "recall_m": utils.recall_m})
 
-        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=['acc', utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
+        #model.compile(optimizer="adam", loss="binary_crossentropy", metrics=['acc', utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
 
+        #model.summary()
 
         #Validate model and plot image, mask and prediction
-        predictions, loss, accuracy, f1_score, precision, recall = model_module.test_model(model, valid_gen, validation_mask_paths)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
-        print('The dice similarity score is:', f1_score)
+        self.BATCH_SIZE = 10
+        predictions, mean_f1_score, mean_recall, mean_precision = model_module.test_model(model, valid_gen_2, validation_mask_paths)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
+        print('The dice similarity score is:', mean_f1_score)
 
 
         #Plot predictions
@@ -109,6 +114,6 @@ class main_class:
         history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
 
         #Save model
-        model.save('Unet_MRI-3.h5')
+        model.save('Unet_MRI-1904.h5')
 
         return history, model
