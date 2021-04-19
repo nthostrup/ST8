@@ -113,13 +113,13 @@ def plot_training_history(history):
 
 def plot_predictions(predictions, input_img_paths, mask_paths):
     #Selected slice to compare
-    i = 2;
+    i = 4
     #Plots 
     #plt.subplot(1,2,1)
     predicted_mask = predictions[i]
-    rounded = np.round(predicted_mask,0)
+    rounded = np.round(predicted_mask, 0)
     plt.figure()
-    plt.imshow(rounded,cmap='gray')
+    plt.imshow(rounded, cmap='gray')
     
     #plt.subplot(1,2,2)
     #Print paths to ensure that they match
@@ -150,3 +150,4 @@ def f1_m(y_true, y_pred):
     precision = precision_m(y_true, y_pred)
     recall = recall_m(y_true, y_pred)
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
+

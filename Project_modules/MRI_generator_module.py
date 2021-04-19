@@ -35,8 +35,7 @@ class MRI_generator(keras.utils.Sequence):
             img = load_img(path, target_size=self.img_size, color_mode="grayscale")
             img_arr = img_to_array(img)
             x[j] = img_arr
-            
-        
+
         #TODO: Fix image size and datatype
         
         y = np.zeros((self.batch_size,) + self.img_size + (1,), dtype="uint8") #+(1,) since img_size is the same for both input and label       

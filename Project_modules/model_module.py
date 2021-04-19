@@ -8,6 +8,8 @@ Created on 26. mar. 2021
 from tensorflow import keras
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras import layers
+import utility_module as utils
+import numpy as np
 from tensorflow.python.keras.layers.pooling import MaxPool2D, GlobalMaxPool2D
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.keras.layers import Dropout, Lambda
@@ -58,16 +60,21 @@ def get_model(img_size, num_classes):
     return model
 
 #Test model with test data(or other data) and plot prediction vs. image vs. true mask
-def test_model(model,test_generator):
+def test_model(model,test_generator, validation_mask_paths):
     #TODO: Maybe calculate dice based on prediction and ground truth
         
     #TODO: Evaluate with some sample images (x_test) and ground truth masks (y_test)
-    #result = model.evaluate(x_test,y_test, batch_size=32)
-    loss, accuracy, f1_score, precision, recall = model.evaluate(test_generator, verbose=1)
+    #result = model.evaluate(x_test,y_test, batch_size=32) ,   loss, accuracy, f1_score, precision, recall
 
+    loss, accuracy, f1_score, precision, recall = model.evaluate(test_generator, verbose=1)
+    print(f1_score)
+
+    # prøv at tjekke om den kører pr. sample eller pr. batch. Evt. lave en løkke så vi kun får en dice pr. billede og derefter mean
+    # Undersøge pixel wise dice eller gennemsnit pr. billede
     predictions = model.predict(test_generator, steps=1)
 
-    
-    
-    return predictions, f1_score
 
+    f1_test = utils.f1_m(predictions, test_generator[3])
+    print(f1_test)
+
+    return predictions, loss, accuracy, f1_score, precision, recall
