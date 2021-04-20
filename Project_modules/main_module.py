@@ -16,7 +16,7 @@ import utility_module as utils
 import model_module
 
 class main_class:
-    def __init__(self, train_input_dir,train_mask_dir,valid_input_dir,valid_mask_dir,test_input_dir,test_mask_dir):
+    def __init__(self, train_input_dir, train_mask_dir, valid_input_dir, valid_mask_dir, test_input_dir, test_mask_dir):
         self.TRAIN_INPUT_DIR = train_input_dir
         self.TRAIN_MASK_DIR = train_mask_dir
         self.VALID_INPUT_DIR = valid_input_dir
@@ -24,12 +24,11 @@ class main_class:
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
         self.BATCH_SIZE = 10
-        self.BATCH_SIZE_TRAIN_GEN = 1   #Når jeg kører testdata igennem fungerer det kun med batchsize 1 - så kommer alle samples ind.
         self.EPOCHS = 2
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
-        self.SAMPLES_TO_RUN = 32
+        self.SAMPLES_TO_RUN = -1
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -56,8 +55,6 @@ class main_class:
 
         valid_gen = utils.make_generator(validation_img_paths, validation_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
 
-        valid_gen_2 = utils.make_generator(validation_img_paths, validation_mask_paths, self.BATCH_SIZE_TRAIN_GEN, self.IMG_SIZE)#Randomizes lists inlist
-
         test_gen = utils.make_generator(test_img_paths, test_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#Randomizes lists inlist
 
 
@@ -67,41 +64,41 @@ class main_class:
         #    print(input_path, "|", target_path)
 
         #Plot of mask and image
-        utils.plot_img_mask(training_img_paths[2], training_mask_paths[2])
+        #utils.plot_img_mask(training_img_paths[2], training_mask_paths[2])
 
         #Get model, input dimensions must match generator. Last dimension added since it must be present
-        model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
+        #model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
 
         #Train model and get history of training performance
-        history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
+        #history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
 
         #Plot history of training
-        utils.plot_training_history(history)
+        #utils.plot_training_history(history)
 
 
         #Load model from directory
-        #model = load_model("Unet_MRI-4.h5",
-                           #custom_objects={"f1_m": utils.f1_m, "precision_m": utils.precision_m,
-                                 #          "recall_m": utils.recall_m})
+        model = load_model("Unet_1.h5",
+                           custom_objects={"f1_m": utils.f1_m, "precision_m": utils.precision_m,
+                                           "recall_m": utils.recall_m})
 
-        #model.compile(optimizer="adam", loss="binary_crossentropy", metrics=['acc', utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
+        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=['acc', utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
 
         #model.summary()
 
         #Validate model and plot image, mask and prediction
-        self.BATCH_SIZE = 10
-        predictions, mean_f1_score, mean_recall, mean_precision = model_module.test_model(model, valid_gen_2, validation_mask_paths)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
+        predictions, mean_f1_score = model_module.test_model(model, valid_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
         print('The dice similarity score is:', mean_f1_score)
 
 
         #Plot predictions
-        utils.plot_predictions(predictions, validation_img_paths, validation_mask_paths)
+        i = 1
+        utils.plot_predictions(predictions[i], validation_img_paths, validation_mask_paths)
 
     def train_model(self, model, train_generator, validation_generator, epochs):
         #Compile model dependant on output dimensions
         #TODO: Implement metric DICE
         #Metric MeanIoU:  IOU is defined as follows: IOU = true_positive / (true_positive + false_positive + false_negative
-        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
+        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m], run_eagerly=True)#Works with 2 classes as output from model.
         model.summary()
 
 

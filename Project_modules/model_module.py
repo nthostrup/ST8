@@ -9,6 +9,7 @@ from tensorflow import keras
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras import layers
 import utility_module as utils
+import math
 import numpy as np
 from tensorflow.python.keras.layers.pooling import MaxPool2D, GlobalMaxPool2D
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
@@ -61,60 +62,30 @@ def get_model(img_size, num_classes):
     return model
 
 #Test model with test data(or other data) and plot prediction vs. image vs. true mask
-def test_model(model, test_generator, validation_mask_paths):
+def test_model(model, test_generator):
     """Calculates the metrics on single images, and afterwards take the mean of all images"""
-    # kræver på nuværende tidspunkt at batchsize = 1 - det kan man evt. definere inden denne metode kaldes.
+    #Få batches ind i funktionerne
 
-    # prøv at tjekke om den kører pr. sample eller pr. batch. Evt. lave en løkke så vi kun får en dice pr. billede og derefter mean
-    # Undersøge pixel wise dice eller gennemsnit pr. billede
+    batch_size = test_generator.batch_size
+    all_samples = len(test_generator.mask_paths)
+    num_batches = math.floor(all_samples/batch_size)  # floor forces it to round down
 
     predictions = []
-    f1_scores = []
-    recalls = []
-    precisions = []
-    for k in range(validation_mask_paths.__len__()*test_generator.batch_size):
-        print(k)
-        inputs, mask = test_generator.__getitem__(k)
-        mask = mask.astype('float32')   # typecast fra uint8 til float32
-        #print("Inputs:", inputs)
-        #print("X axis size of inputs:", np.size(inputs, 0))        # Input dimensioner i x aksen (rækker) Batchsizex512x512
-        #print("Y axis size of inputs:", np.size(inputs, 1))        # Input dimensioner i y aksen (kolonner)
-        #print("Z axis size of inputs:", np.size(inputs, 2))        # Input dimensioner i y aksen (kolonner)
-        prediction = model.predict(inputs)  #Lav single prediction på item k
-        predictions.append(prediction)  #Save in array
-        #print("Predictions:", prediction)
-        #print("X axis size of predictions:", np.size(prediction, 0))
-        #print("Y axis size of predictions:", np.size(prediction, 1))
-        #print("Z axis size of predictions:", np.size(prediction, 2))
-        f1_test = utils.f1_m(y_true=mask, y_pred=prediction)    #beregn f1 score for single prediction
+    f1_pr_batch = []
+    counter = 0
+    for i in range(num_batches):
+        counter = counter + 1
+        print(counter)
+        inputs, mask = test_generator.__getitem__(i)
+        mask = mask.astype('float32')  # typecast from uint8 to float32
 
-        recall = utils.recall_m(mask, prediction)
-        precision = utils.precision_m(mask, prediction)
-        if f1_test is not None:
-            f1_scores.append(f1_test)   #Save in array
-            recalls.append(recall)
-            precisions.append(precision)
-            #print("F1 scores:", f1_test)
-            #print("Len of F1scores:", len(f1_scores))
+    # få kun 1 batch ind ad gangen
+        predictions = model.predict(inputs)  # Smid et helt batch ind
+        f1_scores = utils.f1_m_test(y_true=mask, y_pred=predictions)  # beregn f1 score for single prediction
+        f1_pr_batch.append(f1_scores)       #Saves each
 
-    print(f1_scores[0])
-    print(f1_scores[1])
-    print(f1_scores[2])
-    print(f1_scores[3])
-    print(f1_scores[4])
-    print(f1_scores[5])
-    print(f1_scores[6])
-    print(f1_scores[7])
-    print(f1_scores[8])
-    print(f1_scores[9])
-    print(f1_scores[10])
+    f1_mean = np.mean(f1_pr_batch)
+    print("F1_mean", f1_mean)
 
-    mean_f1 = np.mean(f1_scores)
-    mean_recall = np.mean(recalls)
-    mean_precision = np.mean(precisions)
-    print("Mean f1", mean_f1)
-    print("Mean recall", mean_recall)
-    print("Mean precision", mean_precision)
-
-    return predictions, mean_f1, mean_recall, mean_precision
+    return predictions, f1_mean
 
