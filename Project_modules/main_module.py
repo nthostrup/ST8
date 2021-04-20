@@ -25,8 +25,8 @@ class main_class:
         self.VALID_MASK_DIR = valid_mask_dir
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
-        self.BATCH_SIZE = 20
-        self.EPOCHS = 10
+        self.BATCH_SIZE = 10
+        self.EPOCHS = 100
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
@@ -72,15 +72,15 @@ class main_class:
         model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
 
         #Train model and get history of training performance
-        #history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
+        history, model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)
 
         #Plot history of training
         #utils.plot_training_history(history)
 
 
         #Load model from directory
-        model = load_model("Unet_MRI-4.h5",custom_objects={"f1_m":utils.f1_m,"precision_m":utils.precision_m,"recall_m":utils.recall_m})
-        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
+        #model = load_model("Unet_MRI-5.h5",custom_objects={"f1_m":utils.f1_m,"precision_m":utils.precision_m,"recall_m":utils.recall_m})
+        #model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
         
         #Validate model and plot image, mask and prediction
         predictions, f1_score = model_module.test_model(model, valid_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
@@ -88,18 +88,19 @@ class main_class:
 
         
         #Plot predictions
-        utils.plot_predictions(predictions, validation_img_paths, validation_mask_paths)
+        #utils.plot_predictions(predictions, validation_img_paths, validation_mask_paths)
 
     def train_model(self, model, train_generator, validation_generator, epochs):
         #Compile model dependant on output dimensions
         #TODO: Implement metric DICE
         #Metric MeanIoU:  IOU is defined as follows: IOU = true_positive / (true_positive + false_positive + false_negative
-        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
+        opt = keras.optimizers.Adam(learning_rate=0.001)
+        model.compile(optimizer=opt, loss="binary_crossentropy", metrics=[utils.f1_m, utils.precision_m, utils.recall_m])#Works with 2 classes as output from model.
         model.summary()
 
 
-        earlystopper = EarlyStopping(monitor='val_loss',patience=5, verbose=1)
-        checkpointer = ModelCheckpoint('model-checkpoint_Unet_MRI.h5', verbose=1, monitor='val_loss', save_best_only=True)
+        earlystopper = EarlyStopping(monitor='val_loss',patience=10, verbose=1)
+        checkpointer = ModelCheckpoint('outDat/model-checkpoint_Unet_MRI.h5', verbose=1, monitor='val_loss', save_best_only=True)
         callback = [earlystopper, checkpointer]
 
 
@@ -107,6 +108,6 @@ class main_class:
         history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
 
         #Save model
-        model.save('Unet_MRI-4.h5')
+        model.save('outDat/Unet_1.h5')
 
         return history, model

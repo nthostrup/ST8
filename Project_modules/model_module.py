@@ -22,42 +22,56 @@ from tensorflow.python.keras.layers.normalization import BatchNormalization
 def get_model(img_size, num_classes):
     inputs = keras.Input(shape=img_size+(1,))
 
-    c1 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(inputs)
-    c1 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(c1)
-    p1 = layers.MaxPooling2D((2, 2))(c1) # dims (256, 256, 16)
+    #downsampling/encoder
+    ec1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
+    ec1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(ec1)
+    
+    p1 = layers.MaxPooling2D((2, 2))(ec1) # dims (256, 256, 16)
 
-    c2 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(p1)
-    c2 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(c2)
-    p2 = layers.MaxPooling2D((2, 2))(c2) # dims (None, 128, 128, 32)
+    ec2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(p1)
+    ec2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(ec2)
+    
+    p2 = layers.MaxPooling2D((2, 2))(ec2) # dims (None, 128, 128, 32)
 
-    c3 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(p2)
-    c3 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c3)
-    p3 = layers.MaxPooling2D((2, 2))(c3)  #dims (None, 64, 64, 64)  
+    ec3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(p2)
+    ec3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(ec3)
+    
+    p3 = layers.MaxPooling2D((2, 2))(ec3)  #dims (None, 64, 64, 64)  
 
-    c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(p3)
-    c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(c4)
+    ec4 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(p3)
+    ec4 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(ec4)
     
     
+    
+    ##Upsampling/decoder
+    #convolution and upsampling block
+    u1 = layers.Conv2D(128, (3, 3), padding='same')(ec4)
+    u1 = UpSampling2D((2,2))(u1) # dims (None, 128, 128, 64)
+    
+    u1 = layers.concatenate([u1, ec3])
+    
+    dc1 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(u1)
+    dc1 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(dc1)
 
-    u5 = layers.Conv2D(64, (3, 3), padding='same')(c4)
-    u5 = UpSampling2D((2,2))(u5) # dims (None, 128, 128, 64)
-    u5 = layers.concatenate([u5, c3])
-    c5 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(u5)
-    c5 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(c5)
+    #convolution and upsampling block
+    u2 = layers.Conv2D(64, (3, 3), padding='same')(dc1)
+    u2 = UpSampling2D((2,2))(u2) # dims (None, 256, 256, 32)
+    
+    u2 = layers.concatenate([u2, ec2])
+    
+    dc2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(u2)
+    dc2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(dc2)
 
-    u6 = layers.Conv2D(32, (3, 3), padding='same')(c5)
-    u6 = UpSampling2D((2,2))(u6) # dims (None, 256, 256, 32)
-    u6 = layers.concatenate([u6, c2])
-    c6 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(u6)
-    c6 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(c6)
+    #convolution and upsampling block
+    u3 = layers.Conv2D(32, (3, 3), padding='same')(dc2)
+    u3 = UpSampling2D((2,2))(u3) # dims (None, 512, 512, 16)
+    
+    u3 = layers.concatenate([u3, ec1])
+    
+    dc3 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(u3)
+    dc3 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(dc3)
 
-    u7 = layers.Conv2D(16, (3, 3), padding='same')(c6)
-    u7 = UpSampling2D((2,2))(u7) # dims (None, 512, 512, 16)
-    u7 = layers.concatenate([u7, c1])
-    c7 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(u7)
-    c7 = layers.Conv2D(16, (3, 3), activation='relu', padding='same')(c7)
-
-    outputs = layers.Conv2D(1, (1, 1), activation='sigmoid')(c7)
+    outputs = layers.Conv2D(1, (1, 1), activation='sigmoid')(dc3)
 
     model = Model(inputs=[inputs], outputs=[outputs])
     print(outputs)
