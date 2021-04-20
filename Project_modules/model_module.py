@@ -15,6 +15,7 @@ from tensorflow.python.keras.layers.convolutional import UpSampling2D
 from tensorflow.python.keras.layers.normalization import BatchNormalization
 import utility_module as utils
 import numpy as np
+import math
 
 #Import own modules
 
@@ -38,8 +39,6 @@ def get_model(img_size, num_classes):
     c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(p3)
     c4 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(c4)
 
-
-    
 
     u5 = layers.Conv2D(64, (3, 3), padding='same')(c4)
     u5 = UpSampling2D((2,2))(u5) # dims (None, 128, 128, 64)
@@ -72,23 +71,16 @@ def test_model(model,test_generator):
         
     #TODO: Evaluate with some sample images (x_test) and ground truth masks (y_test)
     #result = model.evaluate(x_test,y_test, batch_size=32)
-    print("model.evaluate")
     loss, f1_score, precision, recall = model.evaluate(test_generator, verbose=1)
     
-    n_batch=1; 
-    predictions = model.predict(test_generator, steps=n_batch)
-    predictions_batch =predictions[n_batch-1:n_batch*10]
+    batch_size = test_generator.batch_size
+    all_samples = len(test_generator.mask_paths)
+    num_batches = math.floor(all_samples/batch_size)  # floor forces it to round down
     
-    #determine ground truth
-    inputs, mask = test_generator.__getitem__(n_batch-1) #getitem input is batchindex. 
-    true_mask = mask.astype('float32') 
-    
-    TP, FP, FN = utils.dice_pixelwise_variables(true_mask, predictions_batch)
-    #calculate variables for pixelwisedice 
-    print("TP:",TP,"FP:",FP,"FN:",FN)
-    dice_pixelw=utils.dice_pixelwise(TP, FP, FN)
-    print("Pixelwise Dice is: ")
-    print(dice_pixelw)
-    
+    predictions = model.predict(test_generator)#, steps=n_batch) 
+    total_dice_pixelw = utils.total_dice_pixelwise(predictions, num_batches, batch_size, test_generator) 
+    print("Total pixelwise Dice is: ")
+    print(total_dice_pixelw)
+        
     return predictions, loss, f1_score, precision, recall
 

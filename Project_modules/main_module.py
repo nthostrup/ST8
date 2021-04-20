@@ -27,7 +27,7 @@ class main_class:
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
         self.BATCH_SIZE = 10
-        self.EPOCHS = 10
+        self.EPOCHS = 2
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
@@ -106,6 +106,6 @@ class main_class:
         history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
 
         #Save model
-        model.save('Unet_MRI-4.h5')
+        model.save('Unet_MRI-new.h5')
 
         return history, model

@@ -149,6 +149,7 @@ def f1_m(y_true, y_pred):
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
 def dice_pixelwise_variables(y_true, y_pred):
+   
     TP = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     TP = np.multiply(TP, 1.0) #typecast to float
     
@@ -164,11 +165,35 @@ def dice_pixelwise_variables(y_true, y_pred):
     FN_temp = (truemask_positive & predmask_negative)
     FN_temp = np.multiply(FN_temp, 1.0)
     FN=K.sum(FN_temp) 
-    #FP = K.sum((K.round(K.clip(y_true, 0, 1))==0) & (K.round(K.clip(y_pred, 0, 1))==1))
-    #FN = K.sum((K.round(K.clip(y_true, 0, 1))==1) & (K.round(K.clip(y_pred, 0, 1))==0)) 
+
     return TP,FP,FN
 
 def dice_pixelwise(TP,FP,FN):
     dice=(2*TP)/((TP+FP)+(TP+FN))
     return dice
     
+def total_dice_pixelwise(predictions, num_batches, batch_size, test_generator):
+    #Calculate 
+    #n_batch=1;
+    TPsum=0 #initially TP, FP or FN is set to zero 
+    FPsum=0
+    FNsum=0
+     
+    for n_batch in range(1, num_batches+1):
+        predictions_batch =predictions[(n_batch-1)*batch_size:n_batch*batch_size]
+        #determine ground truth
+        inputs, mask = test_generator.__getitem__(n_batch-1) #getitem input is batchindex. 
+        true_mask = mask.astype('float32') 
+    
+        TP, FP, FN = dice_pixelwise_variables(true_mask, predictions_batch)
+        TPsum = TPsum+TP
+        FPsum = FPsum+FP
+        FNsum = FNsum+FN
+        #calculate variables for pixelwisedice 
+        #print("TP:",TP,"FP:",FP,"FN:",FN)
+        #dice_pixelw=dice_pixelwise(TP, FP, FN)
+        #print("Batch pixelwise Dice is: ")
+        #print(dice_pixelw)
+        
+    total_dice_pixelw=dice_pixelwise(TPsum, FPsum, FNsum) 
+    return total_dice_pixelw
