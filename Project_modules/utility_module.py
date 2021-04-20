@@ -132,9 +132,9 @@ def plot_predictions(predictions, input_img_paths, mask_paths):
     #plt.show()
     
 def recall_m(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    recall = true_positives / (possible_positives + K.epsilon()) #sensitivitet 
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))#K.clip klipper hvis y_true*y_pred ligger udenfor arrayet [0,1]
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1))) #K.round afrunder ved 0.5, K.sum tager summen
+    recall = true_positives / (possible_positives + K.epsilon()) #K.epsilon er en meget lille vaerdi så vi ikke dividerer med 0
     return recall
 
 def precision_m(y_true, y_pred):
@@ -144,10 +144,55 @@ def precision_m(y_true, y_pred):
     return precision
 
 def f1_m(y_true, y_pred):
-    precision = precision_m(y_true, y_pred)
-    recall = recall_m(y_true, y_pred)
+    precision = precision_m(y_true,y_pred)
+    recall = recall_m(y_true,y_pred)
     return 2*((precision*recall)/(precision+recall+K.epsilon()))
 
+def dice_imagewise_m(y_true, y_pred):
+    f1_scores = []
+    y_true = y_true.numpy()
+    y_pred = y_pred.numpy()
+    for k in range(len(y_true)):
+        # Dette er tjekket for om der er en tom maske med en tom prediction - det virker ikke lige nu for model.fit
+        nonzero_labels = np.count_nonzero(y_true[k])
+        rounded = np.round(y_pred[k], 0)   #afrunder =>0.50 = 1      <0.50 = 0
+        nonzero_predictions = np.count_nonzero(rounded)
+        if nonzero_labels == 0 and nonzero_predictions <= 1:
+            #print("ZERO MASK", k)
+            f1_scores.append(np.nan)
+        else:
+            #print(k)
+
+            precision = precision_m(y_true[k], y_pred[k])
+            recall = recall_m(y_true[k], y_pred[k])
+
+            f1_score = 2 * ((precision * recall) / (precision + recall + K.epsilon()))
+            f1_scores.append(f1_score)
+    mean_dice = np.nanmean(f1_scores)
+    return mean_dice
+
+def dice_imagewise_m_test(y_true, y_pred):
+    f1_scores = []
+    for k in range(len(y_true)):
+        nonzero_labels = np.count_nonzero(y_true[k])
+        rounded = np.round(y_pred[k], 0)   #afrunder =>0.50 = 1      <0.50 = 0
+        nonzero_predictions = np.count_nonzero(rounded)
+        if nonzero_labels == 0 and nonzero_predictions <= 1:
+            #print("ZERO MASK", k)
+            f1_scores.append(np.nan)
+        else:
+            #print(k)
+
+            precision = precision_m(y_true[k], y_pred[k])
+            recall = recall_m(y_true[k], y_pred[k])
+
+            f1_score = 2 * ((precision * recall) / (precision + recall + K.epsilon()))
+            f1_scores.append(f1_score)
+
+    mean_dice = np.nanmean(f1_scores)
+    #print("Imagewise dice pr batch:", mean_dice)
+    return mean_dice
+  
 def dice_pixelwise_variables(y_true, y_pred):
    
     TP = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))

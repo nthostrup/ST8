@@ -67,20 +67,29 @@ def get_model(img_size, num_classes):
 
 #Test model with test data(or other data) and plot prediction vs. image vs. true mask
 def test_model(model,test_generator):
-    #TODO: Maybe calculate dice based on prediction and ground truth
-        
-    #TODO: Evaluate with some sample images (x_test) and ground truth masks (y_test)
-    #result = model.evaluate(x_test,y_test, batch_size=32)
-    loss, f1_score, precision, recall = model.evaluate(test_generator, verbose=1)
     
     batch_size = test_generator.batch_size
     all_samples = len(test_generator.mask_paths)
     num_batches = math.floor(all_samples/batch_size)  # floor forces it to round down
     
+    #IMAGEWISE DICE
+    f1_pr_batch = []
+    for i in range(num_batches):
+        inputs, mask = test_generator.__getitem__(i)
+        mask = mask.astype('float32')  # typecast from uint8 to float32
+        # faa kun 1 batch ind ad gangen
+        predictions = model.predict(inputs)  # Smid et helt batch ind
+        f1_scores = utils.dice_imagewise_m_test(y_true=mask, y_pred=predictions)  # beregn f1 score for single prediction
+        f1_pr_batch.append(f1_scores)       #Saves each
+    
+    f1_mean = np.mean(f1_pr_batch)
+    print("Total mean imagewise Dice is: ", f1_mean)
+    
+    # PIXELWISE DICE
     predictions = model.predict(test_generator)#, steps=n_batch) 
     total_dice_pixelw = utils.total_dice_pixelwise(predictions, num_batches, batch_size, test_generator) 
     print("Total pixelwise Dice is: ")
     print(total_dice_pixelw)
         
-    return predictions, loss, f1_score, precision, recall
+    return predictions, f1_mean
 
