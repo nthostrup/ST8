@@ -6,11 +6,12 @@ Created on 31. mar. 2021
 from tensorflow import keras
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+import time
 
 #Import own modules
 import utility_module as utils
 import model_module
-import plotting_module
+#import plotting_module
 
 output_data = '/output_data'
 
@@ -23,11 +24,11 @@ class main_class:
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
         self.BATCH_SIZE = 10
-        self.EPOCHS = 2
+        self.EPOCHS = 100
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
-        self.SAMPLES_TO_RUN = 100
+        self.SAMPLES_TO_RUN = -1
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -63,13 +64,13 @@ class main_class:
         
         
         #Get model, input dimensions must match generator. Last dimension added since it must be present
-        #model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
+        model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
         #Train model and get history of training performance
-        #model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)     
+        model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)     
         
         #Load model from directory
-        model = load_model("outDat/Unet_1.h5",custom_objects={"f1_m":utils.f1_m})
-        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m])#Works with 2 classes as output from model.
+        #model = load_model("outDat/Unet_1.h5",custom_objects={"f1_m":utils.f1_m})
+        #model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m])#Works with 2 classes as output from model.
         
         #Validate model and plot image, mask and prediction
         predictions, mean_dice_imagewise, total_dice_pixelwise = model_module.test_model(model, valid_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
@@ -78,9 +79,12 @@ class main_class:
 
 
         #Plot predictions
-        plotting_module.plot_predictionsv2(predictions, validation_img_paths,validation_mask_paths,self.BATCH_SIZE)
+        #plotting_module.plot_predictionsv2(predictions, validation_img_paths,validation_mask_paths,self.BATCH_SIZE)
 
     def train_model(self, model, train_generator, validation_generator, epochs):
+        
+
+        
         #Compile model dependant on output dimensions
         opt = keras.optimizers.Adam(learning_rate=0.001)
         model.compile(optimizer=opt, loss="binary_crossentropy", metrics=[utils.f1_m])#Works with 2 classes as output from model.
@@ -91,9 +95,15 @@ class main_class:
         callback = [earlystopper, checkpointer]
 
         # Train the model, doing validation at the end of each epoch.
+        #Start timer
+        t = time.time()
         history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
-
+        #End timer
+        elapsed = time.time()-t
+        
         #Save model
         model.save('outDat/Unet_1.h5')
-
+                
+        print("Runtime for training model, in hours: " , elapsed/(60*60))
+        
         return model
