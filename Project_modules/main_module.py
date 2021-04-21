@@ -10,7 +10,7 @@ from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 #Import own modules
 import utility_module as utils
 import model_module
-import plotting_module
+#import plotting_module
 
 output_data = '/output_data'
 
@@ -23,11 +23,11 @@ class main_class:
         self.TEST_INPUT_DIR = test_input_dir
         self.TEST_MASK_DIR = test_mask_dir
         self.BATCH_SIZE = 10
-        self.EPOCHS = 2
+        self.EPOCHS = 100
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
-        self.SAMPLES_TO_RUN = 100
+        self.SAMPLES_TO_RUN = -1
     def run_main(self):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -63,13 +63,13 @@ class main_class:
         
         
         #Get model, input dimensions must match generator. Last dimension added since it must be present
-        #model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
+        model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
         #Train model and get history of training performance
-        #model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)     
+        model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)     
         
         #Load model from directory
-        model = load_model("outDat/Unet_1.h5",custom_objects={"f1_m":utils.f1_m})
-        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m])#Works with 2 classes as output from model.
+        #model = load_model("outDat/Unet_1.h5",custom_objects={"f1_m":utils.f1_m})
+        #model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m])#Works with 2 classes as output from model.
         
         #Validate model and plot image, mask and prediction
         predictions, mean_dice_imagewise, total_dice_pixelwise = model_module.test_model(model, valid_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
@@ -77,7 +77,7 @@ class main_class:
         print('The pixelwise dice similarity score is:', total_dice_pixelwise)
 
         #Plot predictions
-        plotting_module.plot_predictionsv2(predictions, validation_img_paths,validation_mask_paths,self.BATCH_SIZE)
+        #plotting_module.plot_predictionsv2(predictions, validation_img_paths,validation_mask_paths,self.BATCH_SIZE)
 
     def train_model(self, model, train_generator, validation_generator, epochs):
         #Compile model dependant on output dimensions
