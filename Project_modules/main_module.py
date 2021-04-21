@@ -6,6 +6,7 @@ Created on 31. mar. 2021
 from tensorflow import keras
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+import time
 
 #Import own modules
 import utility_module as utils
@@ -80,6 +81,10 @@ class main_class:
         #plotting_module.plot_predictionsv2(predictions, validation_img_paths,validation_mask_paths,self.BATCH_SIZE)
 
     def train_model(self, model, train_generator, validation_generator, epochs):
+        #Start timer
+        t = time.time()
+
+        
         #Compile model dependant on output dimensions
         opt = keras.optimizers.Adam(learning_rate=0.001)
         model.compile(optimizer=opt, loss="binary_crossentropy", metrics=[utils.f1_m])#Works with 2 classes as output from model.
@@ -94,5 +99,9 @@ class main_class:
 
         #Save model
         model.save('outDat/Unet_1.h5')
-
+        
+        #End timer
+        elapsed = time.time()-t
+        print("Runtime for training model, in hours: " , elapsed/(60*60))
+        
         return model

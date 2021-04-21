@@ -24,6 +24,6 @@ t = time.time()
 mainObject.run_main()
 elapsed = time.time()-t
 
-print("Runtime in hours: " , elapsed/(60*60))
+print("Runtime total, in hours: " , elapsed/(60*60))
 
 print("Done")
