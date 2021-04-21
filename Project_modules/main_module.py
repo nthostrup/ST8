@@ -81,8 +81,7 @@ class main_class:
         #plotting_module.plot_predictionsv2(predictions, validation_img_paths,validation_mask_paths,self.BATCH_SIZE)
 
     def train_model(self, model, train_generator, validation_generator, epochs):
-        #Start timer
-        t = time.time()
+        
 
         
         #Compile model dependant on output dimensions
@@ -95,13 +94,15 @@ class main_class:
         callback = [earlystopper, checkpointer]
 
         # Train the model, doing validation at the end of each epoch.
+        #Start timer
+        t = time.time()
         history = model.fit(train_generator, epochs=epochs, validation_data=validation_generator, callbacks=callback)#Training with validation as generator or dataset
-
-        #Save model
-        model.save('outDat/Unet_1.h5')
-        
         #End timer
         elapsed = time.time()-t
+        
+        #Save model
+        model.save('outDat/Unet_1.h5')
+                
         print("Runtime for training model, in hours: " , elapsed/(60*60))
         
         return model
