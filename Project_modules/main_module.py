@@ -15,7 +15,7 @@ import plotting_module
 output_data = '/output_data'
 
 class main_class:
-    def __init__(self, train_input_dir,train_mask_dir,valid_input_dir,valid_mask_dir,test_input_dir,test_mask_dir):
+    def __init__(self, train_input_dir, train_mask_dir, valid_input_dir, valid_mask_dir, test_input_dir, test_mask_dir):
         self.TRAIN_INPUT_DIR = train_input_dir
         self.TRAIN_MASK_DIR = train_mask_dir
         self.VALID_INPUT_DIR = valid_input_dir
@@ -75,6 +75,7 @@ class main_class:
         predictions, mean_dice_imagewise, total_dice_pixelwise = model_module.test_model(model, valid_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
         print('The imagewise dice similarity score is:', mean_dice_imagewise)
         print('The pixelwise dice similarity score is:', total_dice_pixelwise)
+
 
         #Plot predictions
         plotting_module.plot_predictionsv2(predictions, validation_img_paths,validation_mask_paths,self.BATCH_SIZE)

@@ -55,9 +55,9 @@ def mask_loader(path):
 
 
 def recall_m(y_true, y_pred):
-    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
-    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
-    recall = true_positives / (possible_positives + K.epsilon())
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1))) #K.clip klipper hvis y_true*y_pred ligger udenfor arrayet [0,1]
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))   #K.round afrunder ved 0.5, K.sum tager summen
+    recall = true_positives / (possible_positives + K.epsilon()) #K.epsilon er en meget lille værdi så vi ikke dividerer med 0
     return recall
 
 def precision_m(y_true, y_pred):

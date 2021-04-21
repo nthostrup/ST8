@@ -15,6 +15,7 @@ import numpy as np
 import math
 
 #Import own modules
+import MRI_generator_module
 
 
 #Make model 
@@ -103,3 +104,9 @@ def test_model(model,test_generator):
     total_dice_pixelwise = utils.total_dice_pixelwise(predictions, num_batches, batch_size, test_generator) 
 
     return predictions, mean_dice_imagewise, total_dice_pixelwise
+
+    f1_mean = np.mean(f1_pr_batch)
+    print("F1_mean", f1_mean)
+
+    return predictions, f1_mean
+
