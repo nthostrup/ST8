@@ -81,7 +81,11 @@ def dice_imagewise(y_true, y_pred):
             #print("ZERO MASK", k)
             f1_scores.append(np.nan)
         else:
-            f1_score=f1_m(y_true[k], y_pred[k])
+            precision = precision_m(y_true[k], y_pred[k])
+            recall = recall_m(y_true[k], y_pred[k])
+
+            f1_score = 2 * ((precision * recall) / (precision + recall + K.epsilon()))
+            #f1_score=f1_m(y_true[k], y_pred[k])
             f1_scores.append(f1_score)
 
     mean_dice = np.nanmean(f1_scores)
