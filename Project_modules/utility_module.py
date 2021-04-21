@@ -8,17 +8,7 @@ Created on 25. mar. 2021
 import os
 import random
 import numpy as np
-import matplotlib.pyplot as plt
-from tensorflow import keras
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import Model, load_model
-from tensorflow.keras.layers import Input, BatchNormalization, Activation, Dense, Dropout, Conv2D, Conv2DTranspose, concatenate
-from tensorflow.python.keras.layers.pooling import MaxPool2D, GlobalMaxPool2D
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.preprocessing.image import ImageDataGenerator, array_to_img, img_to_array, load_img
-from tensorflow.keras.models import load_model
-
 
 #Import own modules
 import MRI_generator_module
@@ -38,7 +28,6 @@ def make_generator(input_img_paths, mask_paths, batch_size, img_size):
 
 #Load MRI images
 def input_loader(path):
-    #TODO: Fix sort to be numerical and not binary
     input_images = sorted(
             [
                 os.path.join(path, fname)
@@ -52,7 +41,6 @@ def input_loader(path):
 
 #Load MASKS
 def mask_loader(path):
-    #TODO: Fix sort to be numerical and not binary
     masks = sorted(
             [
                 os.path.join(path, fname)
@@ -64,73 +52,8 @@ def mask_loader(path):
         
     return masks
 
-#Helper to plot image and mask pair
-def plot_img_mask(img_path,mask_path):
-    
-    img = load_img(img_path)
-    img_arr = img_to_array(img)
-    img_arr /= 255.
-    
-    plt.figure()
-    plt.imshow(img_arr,cmap='gray')
-    
-       
-    #maskImg=load_img(mask_path, color_mode="grayscale")
-    #maskImg=np.expand_dims(maskImg, 2)
-    
-    maskImg=plt.imread(mask_path)
-    plt.figure()
-    plt.imshow(maskImg,cmap='gray')
-    
-    plt.show()
-
-def plot_training_history(history):
-    
-    #Plot performance from training
-    #TODO: Consider plotting dice measure
-    #acc = history.history['acc']
-    #val_acc = history.history['val_acc']
-    #plt.plot(epochs, acc, 'bo', label='Training acc')
-    #plt.plot(epochs, val_acc, 'b', label='Validation acc')
-    #plt.title('Training and validation accuracy')
-    #plt.legend()
-    
-    
-    loss = history.history['loss']
-    val_loss = history.history['val_loss']
-    epochs = range(1, len(loss) + 1)
-    
-    plt.figure()
-    plt.plot(epochs, loss, 'bo', label='Training loss')
-    plt.plot(epochs, val_loss, 'b', label='Validation loss')
-    plt.title('Training and validation loss')
-    plt.legend()
-    plt.show(block=False)
 
 
-def plot_predictions(predictions, input_img_paths, mask_paths):
-    #Selected slice to compare
-    i = 5;
-    #Plots 
-    #plt.subplot(1,2,1)
-    predicted_mask = predictions[i]
-    rounded = np.round(predicted_mask,0)
-    plt.figure()
-    plt.imshow(rounded,cmap='gray')
-    
-    #plt.subplot(1,2,2)
-    #Print paths to ensure that they match
-    print("input path: " + input_img_paths[i])
-    print("mask path: " + mask_paths[i])
-    
-    #Plot MRI and mask via utility module
-    plot_img_mask(input_img_paths[i], mask_paths[i])
-    
-    #Plot mask alone
-    #maskImg=plt.imread(mask_paths[i])
-    #plt.imshow(maskImg,cmap='gray')
-    #plt.show()
-    
 def recall_m(y_true, y_pred):
     true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
     possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
@@ -158,12 +81,6 @@ def dice_imagewise(y_true, y_pred):
             #print("ZERO MASK", k)
             f1_scores.append(np.nan)
         else:
-            #print(k)
-
-            #precision = precision_m(y_true[k], y_pred[k])
-            #recall = recall_m(y_true[k], y_pred[k])
-
-            #f1_score = 2 * ((precision * recall) / (precision + recall + K.epsilon()))
             f1_score=f1_m(y_true[k], y_pred[k])
             f1_scores.append(f1_score)
 
@@ -183,11 +100,11 @@ def dice_pixelwise_variables(y_true, y_pred):
     
     FP_temp=(truemask_negative & predmask_positive)
     FP_temp=np.multiply(FP_temp, 1.0) #convert from false, true.. to 0, 1... 
-    FP=K.sum(FP_temp)
+    FP=np.sum(FP_temp)
     
     FN_temp = (truemask_positive & predmask_negative)
     FN_temp = np.multiply(FN_temp, 1.0)
-    FN=K.sum(FN_temp) 
+    FN=np.sum(FN_temp) 
 
     return TP,FP,FN
 
@@ -205,7 +122,7 @@ def total_dice_pixelwise(predictions, num_batches, batch_size, test_generator):
     for n_batch in range(1, num_batches+1):
         predictions_batch =predictions[(n_batch-1)*batch_size:n_batch*batch_size]
         #determine ground truth
-        inputs, mask = test_generator.__getitem__(n_batch-1) #getitem input is batchindex. 
+        _, mask = test_generator.__getitem__(n_batch-1) #getitem input is batchindex. 
         true_mask = mask.astype('float32') 
     
         TP, FP, FN = dice_pixelwise_variables(true_mask, predictions_batch)

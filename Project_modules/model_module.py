@@ -6,11 +6,8 @@ Created on 26. mar. 2021
 
 
 from tensorflow import keras
-from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.models import Model
 from tensorflow.keras import layers
-from tensorflow.python.keras.layers.pooling import MaxPool2D, GlobalMaxPool2D
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from tensorflow.keras.layers import Dropout, Lambda
 from tensorflow.python.keras.layers.convolutional import UpSampling2D
 from tensorflow.python.keras.layers.normalization import BatchNormalization
 import utility_module as utils
@@ -47,16 +44,16 @@ def get_model(img_size, num_classes):
     
     ##Upsampling/decoder
     #convolution and upsampling block
-    u1 = layers.Conv2D(128, (3, 3), padding='same')(ec4)
-    u1 = UpSampling2D((2,2))(u1) # dims (None, 128, 128, 64)
+    u3 = layers.Conv2D(128, (3, 3), padding='same')(ec4)
+    u3 = UpSampling2D((2,2))(u3) # dims (None, 128, 128, 64)
     
-    u1 = layers.concatenate([u1, ec3])
+    u3 = layers.concatenate([u3, ec3])
     
-    dc1 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(u1)
-    dc1 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(dc1)
+    dc3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(u3)
+    dc3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(dc3)
 
     #convolution and upsampling block
-    u2 = layers.Conv2D(64, (3, 3), padding='same')(dc1)
+    u2 = layers.Conv2D(64, (3, 3), padding='same')(dc3)
     u2 = UpSampling2D((2,2))(u2) # dims (None, 256, 256, 32)
     
     u2 = layers.concatenate([u2, ec2])
@@ -65,18 +62,17 @@ def get_model(img_size, num_classes):
     dc2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(dc2)
 
     #convolution and upsampling block
-    u3 = layers.Conv2D(32, (3, 3), padding='same')(dc2)
-    u3 = UpSampling2D((2,2))(u3) # dims (None, 512, 512, 16)
+    u1 = layers.Conv2D(32, (3, 3), padding='same')(dc2)
+    u1 = UpSampling2D((2,2))(u1) # dims (None, 512, 512, 16)
     
-    u3 = layers.concatenate([u3, ec1])
+    u1 = layers.concatenate([u1, ec1])
     
-    dc3 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(u3)
-    dc3 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(dc3)
+    dc1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(u1)
+    dc1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(dc1)
 
-    outputs = layers.Conv2D(1, (1, 1), activation='sigmoid')(dc3)
+    outputs = layers.Conv2D(num_classes, (1, 1), activation='sigmoid')(dc1)
 
     model = Model(inputs=[inputs], outputs=[outputs])
-    print(outputs)
 
     return model
 
@@ -86,20 +82,24 @@ def test_model(model,test_generator):
     all_samples = len(test_generator.mask_paths)
     num_batches = math.floor(all_samples/batch_size)  # floor forces it to round down
     
+    predictions = model.predict(test_generator)#, steps=n_batch) 
+    
     #IMAGEWISE DICE
     f1_pr_batch = []
     for i in range(num_batches):
-        inputs, mask = test_generator.__getitem__(i)
+        _, mask = test_generator.__getitem__(i)
         mask = mask.astype('float32')  # typecast from uint8 to float32
         # faa kun 1 batch ind ad gangen
-        predictions = model.predict(inputs)  # Smid et helt batch ind
-        f1_scores = utils.dice_imagewise(y_true=mask, y_pred=predictions)  # beregn f1 score for single prediction
+        prediction_batch = predictions[i*batch_size:(i+1)*batch_size]
+        
+        f1_scores = utils.dice_imagewise(y_true=mask, y_pred=prediction_batch)  # beregn f1 score for single prediction
+        
         f1_pr_batch.append(f1_scores)       #Saves each
     
     mean_dice_imagewise = np.mean(f1_pr_batch)
    
     # PIXELWISE DICE
-    predictions = model.predict(test_generator)#, steps=n_batch) 
+    
     total_dice_pixelwise = utils.total_dice_pixelwise(predictions, num_batches, batch_size, test_generator) 
 
     return predictions, mean_dice_imagewise, total_dice_pixelwise

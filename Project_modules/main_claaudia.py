@@ -3,12 +3,10 @@ Created on 25. mar. 2021
 
 @author: Bruger
 '''
-import numpy as np
-
+import time
 
 #IMport own modules
 import main_module
-import utility_module as utils
 
 #Global variables/hyperparameters
 data_path = '/data/'
@@ -21,7 +19,11 @@ TEST_MASK_DIR = data_path + "Test/Mask"
 
 mainObject = main_module.main_class(TRAIN_INPUT_DIR,TRAIN_MASK_DIR,VALID_INPUT_DIR, VALID_MASK_DIR, TEST_INPUT_DIR, TEST_MASK_DIR)
 
+#Timer
+t = time.time()
 mainObject.run_main()
+elapsed = time.time()-t
 
+print("Runtime in hours: " , elapsed/(60*60))
 
 print("Done")
