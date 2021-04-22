@@ -104,6 +104,6 @@ class main_class:
         #Save model
         model.save('outDat/Unet_1.h5')
                 
-        print("Runtime for training model, in hours: " , elapsed/(60*60))
+        print("Runtime for training model, in hours: ", elapsed/(60*60))
         
         return model
