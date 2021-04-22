@@ -81,7 +81,17 @@ def dice_imagewise(y_true, y_pred):
             #print("ZERO MASK", k)
             f1_scores.append(np.nan)
         else:
-            f1_score=f1_m(y_true[k], y_pred[k])
+                           
+            TP, FP, FN = dice_pixelwise_variables(y_true[k], y_pred[k]) #Get TP, FP, FN for the given image/mask
+            f1_score = dice_pixelwise(TP, FP, FN) #Calculate the dice for the given image/mask
+            
+            '''
+            precision = precision_m(y_true[k], y_pred[k])
+            recall = recall_m(y_true[k], y_pred[k])
+
+            f1_score = 2 * ((precision * recall) / (precision + recall + K.epsilon()))
+            #f1_score=f1_m(y_true[k], y_pred[k])
+            '''
             f1_scores.append(f1_score)
 
     mean_dice = np.nanmean(f1_scores)
@@ -90,13 +100,13 @@ def dice_imagewise(y_true, y_pred):
 
 def dice_pixelwise_variables(y_true, y_pred):
    
-    TP = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    TP = np.sum(np.around(np.clip(y_true * y_pred, 0, 1)))
     TP = np.multiply(TP, 1.0) #typecast to float
     
-    truemask_negative=(K.round(K.clip(y_true, 0, 1))==0) # 1 when truemask is black 
-    predmask_positive=(K.round(K.clip(y_pred, 0, 1))==1) # 1 when predmask is white 
-    truemask_positive=(K.round(K.clip(y_true, 0, 1))==1) # 1 when truemask is white
-    predmask_negative=(K.round(K.clip(y_pred, 0, 1))==0) # 1 when predmask is black 
+    truemask_negative=(np.around(np.clip(y_true, 0, 1))==0) # 1 when truemask is black 
+    predmask_positive=(np.around(np.clip(y_pred, 0, 1))==1) # 1 when predmask is white 
+    truemask_positive=(np.around(np.clip(y_true, 0, 1))==1) # 1 when truemask is white
+    predmask_negative=(np.around(np.clip(y_pred, 0, 1))==0) # 1 when predmask is black 
     
     FP_temp=(truemask_negative & predmask_positive)
     FP_temp=np.multiply(FP_temp, 1.0) #convert from false, true.. to 0, 1... 
