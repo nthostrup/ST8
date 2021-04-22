@@ -89,8 +89,8 @@ class main_class:
         model.compile(optimizer=opt, loss="binary_crossentropy", metrics=[utils.f1_m])#Works with 2 classes as output from model.
         model.summary()
 
-        earlystopper = EarlyStopping(monitor='val_loss',patience=10, verbose=1)
-        checkpointer = ModelCheckpoint('outDat/model-checkpoint_Unet_MRI.h5', verbose=1, monitor='val_loss', save_best_only=True)
+        earlystopper = EarlyStopping(monitor='val_loss',patience=5, verbose=1,restore_best_weights=True)
+        checkpointer = ModelCheckpoint('outDat/Unet_checkpoint_1.h5', verbose=1, monitor='val_loss', save_best_only=True)
         callback = [earlystopper, checkpointer]
 
         # Train the model, doing validation at the end of each epoch.
