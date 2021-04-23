@@ -20,55 +20,70 @@ import math
 #Make model 
 def get_model(img_size, num_classes):
     inputs = keras.Input(shape=img_size+(1,))
-
+    
+    kernel_init = 'GlorotNormal' # insert the desired initialization, see keras initializers. 
     #downsampling/encoder
-    ec1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
-    ec1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(ec1)
+    ec1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(inputs)
+    ec1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(ec1)
     
     p1 = layers.MaxPooling2D((2, 2))(ec1) # dims (256, 256, 16)
 
-    ec2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(p1)
-    ec2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(ec2)
+    ec2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(p1)
+    ec2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(ec2)
     
     p2 = layers.MaxPooling2D((2, 2))(ec2) # dims (None, 128, 128, 32)
 
-    ec3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(p2)
-    ec3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(ec3)
+    ec3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(p2)
+    ec3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(ec3)
     
     p3 = layers.MaxPooling2D((2, 2))(ec3)  #dims (None, 64, 64, 64)  
 
-    ec4 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(p3)
-    ec4 = layers.Conv2D(256, (3, 3), activation='relu', padding='same')(ec4)
+    ec4 = layers.Conv2D(256, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(p3)
+    ec4 = layers.Conv2D(256, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(ec4)
     
+    ## ekstra lag
     
+    #down 
+    p4 = layers.MaxPooling2D((2, 2))(ec4)  #dims (None, 64, 64, 64)  
+
+    ec5 = layers.Conv2D(512, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(p4)
+    ec5 = layers.Conv2D(512, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(ec5)
+    #up 
+    u4 = layers.Conv2D(256, (3, 3), padding='same', kernel_initializer=kernel_init)(ec5)
+    u4 = UpSampling2D((2,2))(u4) # dims (None, 128, 128, 64)
+    
+    u4 = layers.concatenate([u4, ec4])
+    
+    dc4 = layers.Conv2D(256, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(u4)
+    dc4 = layers.Conv2D(256, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(dc4)
     
     ##Upsampling/decoder
     #convolution and upsampling block
-    u3 = layers.Conv2D(128, (3, 3), padding='same')(ec4)
+    u3 = layers.Conv2D(128, (3, 3), padding='same', kernel_initializer=kernel_init)(dc4)
     u3 = UpSampling2D((2,2))(u3) # dims (None, 128, 128, 64)
     
     u3 = layers.concatenate([u3, ec3])
     
-    dc3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(u3)
-    dc3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same')(dc3)
+    dc3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(u3)
+    dc3 = layers.Conv2D(128, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(dc3)
 
     #convolution and upsampling block
-    u2 = layers.Conv2D(64, (3, 3), padding='same')(dc3)
+    u2 = layers.Conv2D(64, (3, 3), padding='same', kernel_initializer=kernel_init)(dc3)
     u2 = UpSampling2D((2,2))(u2) # dims (None, 256, 256, 32)
     
     u2 = layers.concatenate([u2, ec2])
     
-    dc2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(u2)
-    dc2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same')(dc2)
+    dc2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(u2)
+    dc2 = layers.Conv2D(64, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(dc2)
 
     #convolution and upsampling block
-    u1 = layers.Conv2D(32, (3, 3), padding='same')(dc2)
+    u1 = layers.Conv2D(32, (3, 3), padding='same', kernel_initializer=kernel_init)(dc2)
     u1 = UpSampling2D((2,2))(u1) # dims (None, 512, 512, 16)
     
     u1 = layers.concatenate([u1, ec1])
     
-    dc1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(u1)
-    dc1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same')(dc1)
+    dc1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(u1)
+    dc1 = layers.Conv2D(32, (3, 3), activation='relu', padding='same', kernel_initializer=kernel_init)(dc1)
 
     outputs = layers.Conv2D(num_classes, (1, 1), activation='sigmoid')(dc1)
 
