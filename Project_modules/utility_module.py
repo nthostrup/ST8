@@ -19,11 +19,25 @@ def make_generator(input_img_paths, mask_paths, batch_size, img_size):
     
     random.Random(1337).shuffle(input_img_paths)
     random.Random(1337).shuffle(mask_paths)
-       
+           
     generator = MRI_generator_module.MRI_generator(batch_size, img_size, input_img_paths, mask_paths)
     
     
     return generator
+
+#Makes a generator to feed network with tuple (input,masks) where input is TWO CHANNELS
+def make_generator_w_slicenumber(input_img_paths, mask_paths, batch_size, img_size, input_img_slice_paths):
+    
+    random.Random(1337).shuffle(input_img_paths)
+    random.Random(1337).shuffle(mask_paths)
+    random.Random(1337).shuffle(input_img_slice_paths)
+       
+    generator = MRI_generator_module.MRI_generator_w_sliceNumber(batch_size, img_size, input_img_paths, mask_paths,input_img_slice_paths)
+    
+    
+    return generator
+
+
 
 
 #Load MRI images

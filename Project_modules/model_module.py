@@ -19,9 +19,9 @@ import math
 
 #Make model 
 def get_model(img_size, num_classes):
-    inputs = keras.Input(shape=img_size+(1,))
+    inputs = keras.Input(shape=img_size+(2,)) #Change this dependant on nr of input channels MUST MATCH GENERATOR
     nr_kernels_first_layer = 32
-    kernel_init = 'GlorotNormal'
+    kernel_init = 'GlorotUniform'
 
     #downsampling/encoder
     ec1 = layers.Conv2D(nr_kernels_first_layer, (3, 3), activation='relu', padding='same',kernel_initializer=kernel_init)(inputs)
@@ -97,7 +97,7 @@ def get_model(img_size, num_classes):
     outputs = layers.Conv2D(num_classes, (1, 1), activation='sigmoid')(dc1)
 
     model = Model(inputs=[inputs], outputs=[outputs])
-
+    
     return model
 
 #Test model with test data(or other data) and plot prediction vs. image vs. true mask
