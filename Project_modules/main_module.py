@@ -36,7 +36,7 @@ class main_class:
         self.NUM_CHANNELS_OUT = 1
 
         self.SAMPLES_TO_RUN = -1
-    def run_main(self):
+    def run_main(self, nrInputChannels):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
         training_img_paths = training_img_paths[:self.SAMPLES_TO_RUN]
