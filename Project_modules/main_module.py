@@ -11,6 +11,7 @@ import time
 #Import own modules
 import utility_module as utils
 import model_module
+from tensorflow.python.distribute.coordinator.cluster_coordinator import InputError
 #import plotting_module
 
 output_data = '/output_data'
@@ -66,27 +67,29 @@ class main_class:
         test_slice_paths = utils.input_loader(self.TEST_SLICE_DIR)
 
 
-        #Print paths
-        #for input_path, target_path in zip(training_img_paths[:20], training_mask_paths[:20]):
-        #    print(input_path, "|", target_path)
-
-        #train_gen = utils.make_generator(training_img_paths, training_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#With 1 channel generator. Randomizes lists inlist
-        train_gen = utils.make_generator_w_slicenumber(training_img_paths, training_mask_paths, self.BATCH_SIZE, self.IMG_SIZE,training_slice_paths)#With 2 channel generator. Randomizes lists inlist
+#         #Print paths
+#         for input_path, target_path, slice_path in zip(training_img_paths[:20], training_mask_paths[:20], training_slice_paths[:20]):
+#             print(input_path, "|", target_path, "/", slice_path)
         
-        #valid_gen = utils.make_generator(validation_img_paths, validation_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#With 1 channel generator. Randomizes lists inlist
-        valid_gen = utils.make_generator_w_slicenumber(validation_img_paths, validation_mask_paths, self.BATCH_SIZE, self.IMG_SIZE,validation_slice_paths)#with 2 channel generator. Randomizes lists inlist
-        
-        #test_gen = utils.make_generator(test_img_paths, test_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#with 1 channel generator.Randomizes lists inlist
-        test_gen = utils.make_generator_w_slicenumber(test_img_paths, test_mask_paths, self.BATCH_SIZE, self.IMG_SIZE,test_slice_paths)#with 2 channel generator.Randomizes lists inlist
+        if(nrInputChannels == 1):
+            train_gen = utils.make_generator(training_img_paths, training_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#With 1 channel generator. Randomizes lists inlist
+            valid_gen = utils.make_generator(validation_img_paths, validation_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#With 1 channel generator. Randomizes lists inlist
+            test_gen = utils.make_generator(test_img_paths, test_mask_paths, self.BATCH_SIZE, self.IMG_SIZE)#with 1 channel generator.Randomizes lists inlist
+        elif(nrInputChannels == 2):
+            train_gen = utils.make_generator_w_slicenumber(training_img_paths, training_mask_paths, self.BATCH_SIZE, self.IMG_SIZE,training_slice_paths)#With 2 channel generator. Randomizes lists inlist
+            valid_gen = utils.make_generator_w_slicenumber(validation_img_paths, validation_mask_paths, self.BATCH_SIZE, self.IMG_SIZE,validation_slice_paths)#with 2 channel generator. Randomizes lists inlist
+            test_gen = utils.make_generator_w_slicenumber(test_img_paths, test_mask_paths, self.BATCH_SIZE, self.IMG_SIZE,test_slice_paths)#with 2 channel generator.Randomizes lists inlist
+        else:
+            print("Input nr. of input channels!")
+            raise InputError
 
-
-        #print("\n \n")
-        #for input_path, target_path in zip(training_img_paths[:5], training_mask_paths[:5]): #Check if lists randomized
-        #    print(input_path, "|", target_path)
+#         print("\n \n")
+#         for input_path, target_path, slice_path in zip(training_img_paths[-20:], training_mask_paths[-20:],training_slice_paths[-20:]): #Check if lists randomized
+#             print(input_path, "|", target_path, "/", slice_path)
         
         
         #Get model, input dimensions must match generator. Last dimension added since it must be present
-        model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT)
+        model = model_module.get_model(self.IMG_SIZE, self.NUM_CHANNELS_OUT,nrInputChannels)
         #Train model and get history of training performance
         model = self.train_model(model, train_gen, valid_gen, self.EPOCHS)     
         

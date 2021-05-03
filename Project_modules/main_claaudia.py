@@ -27,7 +27,7 @@ mainObject = main_module.main_class(TRAIN_INPUT_DIR, TRAIN_MASK_DIR, TRAIN_SLICE
 
 #Timer
 t = time.time()
-mainObject.run_main()
+mainObject.run_main(2) #Input either 1 or 2 dependant on input channels
 elapsed = time.time()-t
 
 print("Runtime total, in hours: " , elapsed/(60*60))

@@ -8,6 +8,9 @@ import numpy as np
 from tensorflow.keras.preprocessing.image import load_img
 from tensorflow.keras.preprocessing.image import img_to_array
 
+#Import own modules
+import preprocessing_module as pp_module
+
 #Class inherited from generic Keras class, which is a generator
 class MRI_generator(keras.utils.Sequence):
     """Helper to iterate over the data (as Numpy arrays)."""
@@ -34,6 +37,12 @@ class MRI_generator(keras.utils.Sequence):
             #print(path)
             img = load_img(path, target_size=self.img_size, color_mode="grayscale")
             img_arr = img_to_array(img)
+            img_arr /= 255.
+            
+            ## ::::PREPROCESSING of MRI input::::
+            img_arr = pp_module.CLAHE(img_arr)
+            
+            
             x[j] = img_arr
             
         
@@ -45,6 +54,12 @@ class MRI_generator(keras.utils.Sequence):
                         
             img_arr = img_to_array(img)
             img_arr /= 255.
+            img_arr = np.around(img_arr)# "Binarize masks to be either 0 or 1
+            
+            
+            ##::::::PREPROCESSING OF MASK:::::
+            img_arr = pp_module.openClose(img_arr)
+            
             y[j] = img_arr
             
             # Ground truth labels are 0, 1. Divide by 255 to get this range
@@ -67,14 +82,23 @@ class MRI_generator_w_sliceNumber(MRI_generator):
         batch_input_img_slice_paths = self.input_img_slice_paths[i : i + self.batch_size]
         batch_target_img_paths = self.mask_paths[i : i + self.batch_size]
         
-        x = np.zeros((self.batch_size,) + self.img_size + (2,), dtype="float32") #+(3,) since img_size is the same for both input and label
+        x = np.zeros((self.batch_size,) + self.img_size + (2,), dtype="float32") #+(2,) since we use 2 channels
         for j, (path, slice_path) in enumerate(zip(batch_input_img_paths,batch_input_img_slice_paths)):
             #print(path)
             img = load_img(path, target_size=self.img_size, color_mode="grayscale")
             img_arr = img_to_array(img)
+            img_arr /= 255.
+            
+            ## ::::PREPROCESSING of MRI input::::
+            img_arr = pp_module.CLAHE(img_arr)
+            
+            
             slice_img = load_img(slice_path, target_size=self.img_size, color_mode="grayscale")
             slice_arr = img_to_array(slice_img)
-            temp = np.concatenate((img_arr,slice_arr),2)
+            slice_arr /= 255.
+            
+            
+            
             x[j] = np.concatenate((img_arr,slice_arr),2)
             
         
@@ -86,6 +110,10 @@ class MRI_generator_w_sliceNumber(MRI_generator):
                         
             img_arr = img_to_array(img)
             img_arr /= 255.
+            img_arr = np.around(img_arr)# "Binarize masks to be either 0 or 1
+            
+            img_arr = pp_module.openClose(img_arr)
+            
             y[j] = img_arr
             
             # Ground truth labels are 0, 1. Divide by 255 to get this range

@@ -18,8 +18,8 @@ import math
 
 
 #Make model 
-def get_model(img_size, num_classes):
-    inputs = keras.Input(shape=img_size+(2,)) #Change this dependant on nr of input channels MUST MATCH GENERATOR
+def get_model(img_size, num_classes,nrInputChannels):
+    inputs = keras.Input(shape=img_size+(nrInputChannels,)) #Change this dependant on nr of input channels MUST MATCH GENERATOR
     nr_kernels_first_layer = 32
     kernel_init = 'GlorotUniform'
 
