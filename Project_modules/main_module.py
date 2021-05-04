@@ -11,7 +11,6 @@ import time
 #Import own modules
 import utility_module as utils
 import model_module
-from tensorflow.python.distribute.coordinator.cluster_coordinator import InputError
 #import plotting_module
 
 output_data = '/output_data'
@@ -30,12 +29,12 @@ class main_class:
         self.TEST_MASK_DIR = test_mask_dir
         self.TEST_SLICE_DIR = test_slice_dir
         
-        self.BATCH_SIZE = 50
-        self.EPOCHS = 100
+        self.BATCH_SIZE = 10
+        self.EPOCHS = 2
         self.IMG_SIZE = (512, 512)
         self.NUM_CHANNELS_OUT = 1
 
-        self.SAMPLES_TO_RUN = -1
+        self.SAMPLES_TO_RUN = 20
     def run_main(self, nrInputChannels):
         #Load image and mask paths - training
         training_img_paths = utils.input_loader(self.TRAIN_INPUT_DIR)
@@ -81,7 +80,7 @@ class main_class:
             test_gen = utils.make_generator_w_slicenumber(test_img_paths, test_mask_paths, self.BATCH_SIZE, self.IMG_SIZE,test_slice_paths)#with 2 channel generator.Randomizes lists inlist
         else:
             print("Input nr. of input channels!")
-            raise InputError
+            return
 
 #         print("\n \n")
 #         for input_path, target_path, slice_path in zip(training_img_paths[-20:], training_mask_paths[-20:],training_slice_paths[-20:]): #Check if lists randomized
