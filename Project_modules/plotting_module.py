@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
 import skimage.feature
+from itertools import count
 
 #Helper to plot image and mask pair
 def plot_img_mask(img_path,mask_path):
@@ -53,8 +54,9 @@ def plot_training_history(history):
     plt.show(block=False)
 
 #Method to plot mask on top of MR image
-def plot_predictionsv2(predictions, input_img_paths,mask_paths,batch_size):
+def plot_predictionsv2(predictions, input_img_paths,mask_paths,batch_size, generator):
     
+    mri_img, mask = generator.__getitem__(0) #getitem input is batchindex.
     for i in range(batch_size):
         #print("input path: " + input_img_paths[i])
         #print("mask path: " + mask_paths[i])
@@ -65,11 +67,17 @@ def plot_predictionsv2(predictions, input_img_paths,mask_paths,batch_size):
         img = load_img(input_img_paths[i])
         mr_img_arr = img_to_array(img)
         mr_img_arr /= 255.
+        
+        mr_img_arr = mri_img[i] #Added to plot preprocessed MRI
+        
         #print(mr_img_arr.shape) # 512*512*3
         # load ground truth mask
         img = load_img(mask_paths[i], (512,512), color_mode="grayscale")
         img_arr = img_to_array(img)
         img_arr /= 255.
+        
+        img_arr = mask[i]#ADDED to plot preprocessed MRI
+        
         # beregner edges for ground thruth masken
         edges_gt = skimage.feature.canny(
         image=np.squeeze(img_arr),
@@ -126,4 +134,10 @@ def plot_predictions(predictions, input_img_paths, mask_paths):
     #maskImg=plt.imread(mask_paths[i])
     #plt.imshow(maskImg,cmap='gray')
     #plt.show()
+    
+def make_boxplot_plot(dice):
+    plt.figure()
+    plt.boxplot(np.asarray(dice))
+    plt.title('Boxplot of DICE pr. image. Total images: {}'.format(len(dice)))
+    plt.show()
     

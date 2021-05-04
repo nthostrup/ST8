@@ -41,6 +41,7 @@ class MRI_generator(keras.utils.Sequence):
             
             ## ::::PREPROCESSING of MRI input::::
             img_arr = pp_module.CLAHE(img_arr)
+            #img_arr = pp_module.median(img_arr)
             
             
             x[j] = img_arr

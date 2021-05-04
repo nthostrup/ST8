@@ -110,7 +110,7 @@ def dice_imagewise(y_true, y_pred):
 
     mean_dice = np.nanmean(f1_scores)
     #print("Imagewise dice pr batch:", mean_dice)
-    return mean_dice
+    return mean_dice, f1_scores
 
 def dice_pixelwise_variables(y_true, y_pred):
    

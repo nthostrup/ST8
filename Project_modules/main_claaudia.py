@@ -23,7 +23,7 @@ TEST_INPUT_DIR = data_path + "Test/Img"
 TEST_MASK_DIR = data_path + "Test/Mask"
 TEST_SLICE_DIR = data_path + "Test/SliceNr_test"
 
-mainObject = main_module.main_class(TRAIN_INPUT_DIR, TRAIN_MASK_DIR, TRAIN_SLICE_DIR, VALID_INPUT_DIR, VALID_MASK_DIR, VALID_SLICE_DIR, TEST_INPUT_DIR, TEST_MASK_DIR, TEST_SLICE_DIR)
+mainObject = main_module.main_class(TRAIN_INPUT_DIR, TRAIN_MASK_DIR, TRAIN_SLICE_DIR, VALID_INPUT_DIR, VALID_MASK_DIR, VALID_SLICE_DIR)
 
 #Timer
 t = time.time()

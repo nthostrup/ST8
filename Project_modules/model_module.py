@@ -116,7 +116,7 @@ def test_model(model,test_generator):
         # faa kun 1 batch ind ad gangen
         prediction_batch = predictions[i*batch_size:(i+1)*batch_size]
         
-        f1_scores = utils.dice_imagewise(y_true=mask, y_pred=prediction_batch)  # beregn f1 score for single prediction
+        f1_scores, _ = utils.dice_imagewise(y_true=mask, y_pred=prediction_batch)  # beregn f1 score for single prediction
         
         f1_pr_batch.append(f1_scores)       #Saves each
     
