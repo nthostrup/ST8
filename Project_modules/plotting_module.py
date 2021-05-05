@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from tensorflow.keras.preprocessing.image import img_to_array, load_img
 import skimage.feature
 from itertools import count
+from Tools.scripts.objgraph import flat
 
 #Helper to plot image and mask pair
 def plot_img_mask(img_path,mask_path):
@@ -54,33 +55,24 @@ def plot_training_history(history):
     plt.show(block=False)
 
 #Method to plot mask on top of MR image
-def plot_predictionsv2(predictions, input_img_paths,mask_paths,batch_size, generator):
+def plot_predictionsv2(predictions, generator,batch_to_show):
     
-    mri_img, mask = generator.__getitem__(0) #getitem input is batchindex.
+    mri_img, mask = generator.__getitem__(batch_to_show) #getitem input is batchindex.
+    batch_size = generator.batch_size
     for i in range(batch_size):
-        #print("input path: " + input_img_paths[i])
-        #print("mask path: " + mask_paths[i])
         # load predicted mask
-        predicted_mask = predictions[i]
+        predicted_mask = predictions[i+batch_size*batch_to_show]
         rounded = np.round(predicted_mask,0) #rounds the array to integers.
-        # load MRI
-        img = load_img(input_img_paths[i])
-        mr_img_arr = img_to_array(img)
-        mr_img_arr /= 255.
         
+        # load MRI        
         mr_img_arr = mri_img[i] #Added to plot preprocessed MRI
         
-        #print(mr_img_arr.shape) # 512*512*3
         # load ground truth mask
-        img = load_img(mask_paths[i], (512,512), color_mode="grayscale")
-        img_arr = img_to_array(img)
-        img_arr /= 255.
-        
-        img_arr = mask[i]#ADDED to plot preprocessed MRI
+        mask_arr = mask[i]#ADDED to plot preprocessed MRI
         
         # beregner edges for ground thruth masken
         edges_gt = skimage.feature.canny(
-        image=np.squeeze(img_arr),
+        image=np.squeeze(mask_arr),
         sigma=1,
         low_threshold=0.1,
         high_threshold=0.9,
@@ -110,8 +102,8 @@ def plot_predictionsv2(predictions, input_img_paths,mask_paths,batch_size, gener
         pic = mr_img_arr+Mask_gt_pred
         plt.imshow(pic)
         plt.title('MRI, ground thruth is red and prediction is green')
-        plt.show()    
 
+    plt.show()    
 def plot_predictions(predictions, input_img_paths, mask_paths):
     #Selected slice to compare
     i = 5;
@@ -138,6 +130,26 @@ def plot_predictions(predictions, input_img_paths, mask_paths):
 def make_boxplot_plot(dice):
     plt.figure()
     plt.boxplot(np.asarray(dice))
-    plt.title('Boxplot of DICE pr. image. Total images: {}'.format(len(dice)))
-    plt.show()
+    plt.title('Boxplot of DICE pr. image. Total images: %d'%(len(dice)))
+    plt.xlabel("Batch nr.")
+    plt.ylabel("Dice score")
+    plt.ylim(0,1)
+    #plt.show()
+
+def make_maskSize_vs_DICE_plot(dice,maskSize):
+    flattenDice = [item for sublist in dice for item in sublist]
+    
+    plt.figure()
+    plt.scatter(maskSize,flattenDice)
+    plt.title('Plot GT mask size vs DICE pr. image. Total batches: %d . Total images: %d'%(len(dice),len(flattenDice)))
+    plt.xlabel("Mask size, in proportion of total img")
+    plt.ylabel("Dice score")
+    
+    #obtain m (slope) and b(intercept) of linear regression line
+    m, b = np.polyfit(maskSize,flattenDice, 1)
+    
+    #add linear regression line to scatterplot 
+    plt.plot(maskSize, m*np.array(maskSize)+b, color="red")
+    textStr = "Regression: y=%2.3f x + %1.3f"%(m,b)
+    plt.text(0.03, 0, textStr)
     

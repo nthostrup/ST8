@@ -15,24 +15,36 @@ import time
 import plotting_module
 import MRI_generator_module
 import random
+import matplotlib.pyplot as plt
+from _ast import If
+
+#Global variables
+SIZE_PR_MASK = []
+IMG_SIZE = (512, 512)
 
 
 def mainMethod(nrInputChannels, TEST_INPUT_DIR, TEST_MASK_DIR, TEST_SLICE_DIR):
-        BATCH_SIZE = 30
-        EPOCHS = 1
-        IMG_SIZE = (512, 512)
-        NUM_CHANNELS_OUT = 1
-        SAMPLES_TO_RUN = 90
         
 
         #Load image and mask paths - Test
         test_img_paths = utils.input_loader(TEST_INPUT_DIR)
-        test_img_paths = test_img_paths[:SAMPLES_TO_RUN]
-        
         test_mask_paths = utils.mask_loader(TEST_MASK_DIR)
-        test_mask_paths = test_mask_paths[:SAMPLES_TO_RUN]
-        
         test_slice_paths = utils.input_loader(TEST_SLICE_DIR)
+        
+        #Determines batch size and samples to run based on length of filelist
+        if len(test_img_paths) < 50:
+            BATCH_SIZE = len(test_img_paths)
+            SAMPLES_TO_RUN = BATCH_SIZE
+            batch_to_plot = 0
+            onePersonRun = True
+        else:
+            BATCH_SIZE = 30
+            SAMPLES_TO_RUN = 900
+            batch_to_plot = 1
+            onePersonRun = False
+            
+        test_img_paths = test_img_paths[:SAMPLES_TO_RUN]
+        test_mask_paths = test_mask_paths[:SAMPLES_TO_RUN]
         test_slice_paths = test_slice_paths[:SAMPLES_TO_RUN]
         
         #To sort list of scans alphanumerically if one person is tested...
@@ -56,10 +68,13 @@ def mainMethod(nrInputChannels, TEST_INPUT_DIR, TEST_MASK_DIR, TEST_SLICE_DIR):
         model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m])#Works with 2 classes as output from model.
         
         #Validate model and plot image, mask and prediction
-        predictions, mean_dice_imagewise, total_dice_pixelwise, f1_pr_image, volume_first_batch_pred, volume_first_batch_GT = test_model(model, test_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
+        predictions, mean_dice_imagewise, total_dice_pixelwise, f1_pr_batch_pr_image, volume_first_batch_pred, volume_first_batch_GT = test_model(model, test_gen)   # https://datascience.stackexchange.com/questions/45165/how-to-get-accuracy-f1-precision-and-recall-for-a-keras-model
         
-        cleanedF1_pr_img = [x for x in f1_pr_image if str(x) != 'nan']
-        
+        cleanedF1_pr_img_in_batch=[]
+        for i in range(len(f1_pr_batch_pr_image)):
+            cleanedF1_pr_img_in_batch.append([x for x in f1_pr_batch_pr_image[i] if math.isnan(x) == False])
+            #Make boxplot for each batch
+            #plotting_module.make_boxplot_plot(cleanedF1_pr_img_in_batch[i])
         
         
         
@@ -68,10 +83,21 @@ def mainMethod(nrInputChannels, TEST_INPUT_DIR, TEST_MASK_DIR, TEST_SLICE_DIR):
         print('The volume of the first batch on prediction is: %1.3f L' %(volume_first_batch_pred))
         print('And volume of the first batch on ground truth is %1.3f L' %(volume_first_batch_GT))
         print('Which corresponds to: %3.1f pct. difference' %(100*(volume_first_batch_pred-volume_first_batch_GT)/volume_first_batch_GT))
+        
+        
+        #Make scatter plot of mask proportion vs DICE
+        plotting_module.make_maskSize_vs_DICE_plot(cleanedF1_pr_img_in_batch, SIZE_PR_MASK)
+        
+        #Make boxplot for all batches in one
+        plotting_module.make_boxplot_plot([item for sublist in cleanedF1_pr_img_in_batch for item in sublist])
+        
+        #Make boxplot for each batch
+        #plotting_module.make_boxplot_plot(cleanedF1_pr_img_in_batch)
+        #plt.show()
 
         #Plot predictions
-        #plotting_module.plot_predictionsv2(predictions, test_img_paths, test_mask_paths, BATCH_SIZE, test_gen)
-        plotting_module.make_boxplot_plot(cleanedF1_pr_img)
+        #plotting_module.plot_predictionsv2(predictions, test_gen, batch_to_plot)
+        
         
         
 def test_model(model,test_generator):
@@ -85,7 +111,7 @@ def test_model(model,test_generator):
     
     #IMAGEWISE DICE
     f1_pr_batch = []
-    f1_pr_image = []
+    f1_pr_batch_pr_image = []
     volume_batches = []
     volume_batches_GT = []
     for i in range(num_batches):
@@ -97,7 +123,7 @@ def test_model(model,test_generator):
         #Calculate imagewise dice
         f1_scores, f1_pr_image_batch = utils.dice_imagewise(y_true=mask, y_pred=prediction_batch)  # beregn f1 score for single prediction
         f1_pr_batch.append(f1_scores)       #Saves each dice for a batch
-        f1_pr_image.append(f1_pr_image_batch) #saves each dice for each image
+        f1_pr_batch_pr_image.append(f1_pr_image_batch) #saves each dice for each image
         
         #calculate volume
         tempVol_batch_pred, tempVol_batch_GT = calculate_volume_on_batch(prediction_batch,mask)
@@ -111,7 +137,7 @@ def test_model(model,test_generator):
     
     total_dice_pixelwise = utils.total_dice_pixelwise(predictions, num_batches, batch_size, test_generator) 
 
-    return predictions, mean_dice_imagewise, total_dice_pixelwise, f1_pr_image[0], volume_batches[0], volume_batches_GT[0]
+    return predictions, mean_dice_imagewise, total_dice_pixelwise, f1_pr_batch_pr_image, volume_batches[0], volume_batches_GT[0]
 
 def calculate_volume_on_batch(prediction_batch, groundtruth_mask):
     pixelToArea = (0.8203*10**-3)*(0.8203*10**-3)#m^2 from dicom documentation and file
@@ -131,9 +157,11 @@ def calculate_volume_on_batch(prediction_batch, groundtruth_mask):
         
         if(len(countsPred)==2):
             volumePredicted += (countsPred[1]*depthOfPixel*pixelToArea)*1000
+            if(len(countsMask) == 1):
+                SIZE_PR_MASK.append(0)#Placed here to count zero-GT with 
         if(len(countsMask)==2):
             volumeGroundTruth += (countsMask[1]*depthOfPixel*pixelToArea)*1000
-        
+            SIZE_PR_MASK.append(countsMask[1]/(512*512))
     
     
     return volumePredicted, volumeGroundTruth
@@ -183,4 +211,5 @@ mainMethod(nrInputChannels, VALID_INPUT_DIR, VALID_MASK_DIR, VALID_SLICE_DIR)
 #mainMethod(nrInputChannels, VALID_INPUT_DIR_oneperson, VALID_MASK_DIR_oneperson, VALID_SLICE_DIR_oneperson)
 elapsed = time.time()-t
 print("Runtime total, in hours: " , elapsed/(60*60))
+plt.show()
 print("Done")
