@@ -16,8 +16,10 @@ import plotting_module
 import MRI_generator_module
 import random
 import matplotlib.pyplot as plt
-from _ast import If
-
+import skimage.feature
+import skimage.io
+import os.path
+from tensorflow.python.ops.gen_batch_ops import batch
 #Global variables
 SIZE_PR_MASK = []
 IMG_SIZE = (512, 512)
@@ -38,14 +40,14 @@ def mainMethod(nrInputChannels, TEST_INPUT_DIR, TEST_MASK_DIR, TEST_SLICE_DIR):
             batch_to_plot = 0
             onePersonRun = True
         else:
-            BATCH_SIZE = 30
+            BATCH_SIZE = 1
             SAMPLES_TO_RUN = 900
             batch_to_plot = 1
             onePersonRun = False
             
-        test_img_paths = test_img_paths[:SAMPLES_TO_RUN]
-        test_mask_paths = test_mask_paths[:SAMPLES_TO_RUN]
-        test_slice_paths = test_slice_paths[:SAMPLES_TO_RUN]
+#         test_img_paths = test_img_paths[:SAMPLES_TO_RUN]
+#         test_mask_paths = test_mask_paths[:SAMPLES_TO_RUN]
+#         test_slice_paths = test_slice_paths[:SAMPLES_TO_RUN]
         
         #To sort list of scans alphanumerically if one person is tested...
 #         test_img_paths = sorted(test_img_paths, key=lambda item: int(item.partition('_')[2].partition('_')[2].partition('.')[0]))
@@ -64,7 +66,7 @@ def mainMethod(nrInputChannels, TEST_INPUT_DIR, TEST_MASK_DIR, TEST_SLICE_DIR):
         
         
         #Load model from directory
-        model = load_model("C:/Users/Bruger/Desktop/Trained_Unets/Unet_prepr_3.h5",custom_objects={"f1_m":utils.f1_m})
+        model = load_model(r"C:\Users\Bruger\OneDrive\Dokumenter\Uni\Sundhedsteknologi\8. semester\Projekt\python\Trained_Unets/Unet_final_20210506-163849.h5",custom_objects={"f1_m":utils.f1_m})
         model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[utils.f1_m])#Works with 2 classes as output from model.
         
         #Validate model and plot image, mask and prediction
@@ -76,7 +78,13 @@ def mainMethod(nrInputChannels, TEST_INPUT_DIR, TEST_MASK_DIR, TEST_SLICE_DIR):
             #Make boxplot for each batch
             #plotting_module.make_boxplot_plot(cleanedF1_pr_img_in_batch[i])
         
+        #Write information to files:
+        makeOutputfileImagewise([item for sublist in f1_pr_batch_pr_image for item in sublist],test_img_paths)
+        #outputPredictions(predictions, test_gen, test_img_paths)
         
+        #appendVolumeAndDiceToFile(volume_first_batch_GT, volume_first_batch_pred, mean_dice_imagewise, total_dice_pixelwise)
+        
+        #outputPredictionMasks(predictions,test_img_paths)
         
         print('The imagewise dice similarity score is: %1.6f' %mean_dice_imagewise)
         print('The pixelwise dice similarity score is: %1.6f' %total_dice_pixelwise)
@@ -86,10 +94,11 @@ def mainMethod(nrInputChannels, TEST_INPUT_DIR, TEST_MASK_DIR, TEST_SLICE_DIR):
         
         
         #Make scatter plot of mask proportion vs DICE
-        plotting_module.make_maskSize_vs_DICE_plot(cleanedF1_pr_img_in_batch, SIZE_PR_MASK)
+        #plotting_module.make_maskSize_vs_DICE_plot(f1_pr_batch_pr_image, SIZE_PR_MASK)
+        
         
         #Make boxplot for all batches in one
-        plotting_module.make_boxplot_plot([item for sublist in cleanedF1_pr_img_in_batch for item in sublist])
+        #plotting_module.make_boxplot_plot([item for sublist in cleanedF1_pr_img_in_batch for item in sublist])
         
         #Make boxplot for each batch
         #plotting_module.make_boxplot_plot(cleanedF1_pr_img_in_batch)
@@ -106,8 +115,11 @@ def test_model(model,test_generator):
     num_batches = math.floor(all_samples/batch_size)  # floor forces it to round down
     
     print("Prediction in progres..")
+    t = time.time()
     predictions = model.predict(test_generator)#, steps=n_batch) 
-    print("Prediction finished!")
+    
+    elapsed = time.time()-t
+    print("Prediction finished! Time: ",elapsed," sec")
     
     #IMAGEWISE DICE
     f1_pr_batch = []
@@ -140,7 +152,8 @@ def test_model(model,test_generator):
     return predictions, mean_dice_imagewise, total_dice_pixelwise, f1_pr_batch_pr_image, volume_batches[0], volume_batches_GT[0]
 
 def calculate_volume_on_batch(prediction_batch, groundtruth_mask):
-    pixelToArea = (0.8203*10**-3)*(0.8203*10**-3)#m^2 from dicom documentation and file
+    pixSpacing = 0.78125
+    pixelToArea = (pixSpacing*10**-3)*(pixSpacing*10**-3)#m^2 from dicom documentation and file
     depthOfPixel = 4*10**-3#4m
     
     
@@ -157,12 +170,13 @@ def calculate_volume_on_batch(prediction_batch, groundtruth_mask):
         
         if(len(countsPred)==2):
             volumePredicted += (countsPred[1]*depthOfPixel*pixelToArea)*1000
-            if(len(countsMask) == 1):
-                SIZE_PR_MASK.append(0)#Placed here to count zero-GT with 
+#             if(len(countsMask) == 1 & countsPred[1] <=1):
+#                 SIZE_PR_MASK.append(0)#Placed here to count zero-GT with 
         if(len(countsMask)==2):
             volumeGroundTruth += (countsMask[1]*depthOfPixel*pixelToArea)*1000
             SIZE_PR_MASK.append(countsMask[1]/(512*512))
-    
+        elif(len(countsMask)==1):# & (len(countsPred)==1 | countsPred[1]<=1)):
+            SIZE_PR_MASK.append(0)#Placed here to count zero-GT with 
     
     return volumePredicted, volumeGroundTruth
 
@@ -188,7 +202,101 @@ def make_generator_w_slicenumber(input_img_paths, mask_paths, batch_size, img_si
     
     return generator
 
+def makeOutputfileImagewise(imgwise_dice,test_img_paths):
+    directoryOut = "C:/Users/Bruger/OneDrive/Dokumenter/Uni/Sundhedsteknologi/8. semester/Projekt/ResultOutput/"
+    filename = directoryOut +"NEW_ImagewiseDice_for_"+str(len(SIZE_PR_MASK))+"_images_GT0andPred0.csv"
+    
+    print("Saving ImgWise Dice to filename "+filename)
+    
+    np.savetxt(filename, 
+           [(imgwise_dice), (SIZE_PR_MASK),(test_img_paths)],
+           delimiter ="; ",
+           newline='\n', 
+           fmt ='%s')
 
+#Only makes sense to use with a single person as input directory (otherwise volume is not correct)     
+def appendVolumeAndDiceToFile(VolumeGT, VolumePredicted,ImgWiseDice,PixelWiseDice):
+    directoryOut = "C:/Users/Bruger/OneDrive/Dokumenter/Uni/Sundhedsteknologi/8. semester/Projekt/ResultOutput/"
+    filename = directoryOut +"ResultFile_pr_person_eksamen.csv"
+    print("Saving person "+p+" to file..")
+    f = open(filename,'a')
+    
+    np.savetxt(f, 
+           [[str(VolumeGT).replace(".",","), str(VolumePredicted).replace(".",","), str(ImgWiseDice).replace(".",","), str(PixelWiseDice).replace(".",","), str(len(SIZE_PR_MASK))]],
+           delimiter =";", 
+           newline='\n',
+           fmt ='%s')
+    f.close()
+    print("Save complete!")
+    
+#Method to plot mask on top of MR image
+def outputPredictions(predictions, generator, test_img_paths):
+    batch_size = generator.batch_size
+    
+    print("Creating masks and saving images")
+    for batch_to_show in range(len(predictions)//batch_size):
+        mri_img, mask = generator.__getitem__(batch_to_show) #getitem input is batchindex.
+        
+        for i in range(batch_size):
+            # load predicted mask
+            predicted_mask = predictions[i+batch_size*batch_to_show]
+            imgName = os.path.basename(test_img_paths[i+batch_size*batch_to_show])
+            rounded = np.round(predicted_mask,0) #rounds the array to integers.
+            
+            # load MRI        
+            mr_img_arr = mri_img[i] #Added to plot preprocessed MRI
+            
+            # load ground truth mask
+            mask_arr = mask[i]#ADDED to plot preprocessed MRI
+            
+            # beregner edges for ground thruth masken
+            edges_gt = skimage.feature.canny(
+            image=np.squeeze(mask_arr),
+            sigma=1,
+            low_threshold=0.1,
+            high_threshold=0.9,
+            ) #shape = 512,512
+            # beregner edges for den predicterede maske
+            edges_pred = skimage.feature.canny(
+            image=np.squeeze(rounded),
+            sigma=1,
+            low_threshold=0.1,
+            high_threshold=0.9,
+            ) #shape = 512,512
+            # rgb for roed er (255,0,0)
+            #laver ground truth maske i roede farver.
+            Mask_gt_pred = np.zeros((512,512,3))
+            for l in range(0,512):
+                for w in range(0,512):
+                        if edges_gt[l,w]==True:
+                            Mask_gt_pred[l,w,:] = [1,0,0] #red
+            
+            
+            for l in range(0,512):
+                for w in range(0,512):
+                    if edges_pred[l,w]==True:
+                        Mask_gt_pred[l,w,:] = [0,1,0] #green
+            # Output img to file
+            pic = np.maximum(mr_img_arr,Mask_gt_pred)  
+            
+            directoryOut = "C:/Users/Bruger/OneDrive/Dokumenter/Uni/Sundhedsteknologi/8. semester/Projekt/ResultOutput/predictedMasksImg_eksamen/IBS/"
+            filename = directoryOut + imgName
+            
+            skimage.io.imsave(filename, pic)
+            
+    print("All images saved")
+    
+def outputPredictionMasks(predictions, test_img_paths):
+        for i in range(len(predictions)):        
+            predicted_mask = predictions[i]
+            rounded = np.round(predicted_mask,0) #rounds the array to integers.    
+            
+            imgName = os.path.basename(test_img_paths[i])
+
+            directoryOut = "C:/Users/Bruger/OneDrive/Dokumenter/Uni/Sundhedsteknologi/8. semester/Projekt/ResultOutput/predictedMasksMask_eksamen/IBS/"+p+"/"
+            filename = directoryOut + imgName
+            
+            skimage.io.imsave(filename, rounded)
 
 #To use before final test
 VALID_INPUT_DIR = "C:/Users/Bruger/Desktop/MRI/Validation/Img"
@@ -203,13 +311,23 @@ VALID_SLICE_DIR_oneperson ="C:/Users/Bruger/Desktop/MRI/Validation/SliceNr_valid
 TEST_INPUT_DIR = "C:/Users/Bruger/Desktop/MRI/Test/Img"
 TEST_MASK_DIR ="C:/Users/Bruger/Desktop/MRI/Test/Mask"
 TEST_SLICE_DIR ="C:/Users/Bruger/Desktop/MRI/Test/SliceNr_test"
-
-nrInputChannels = 1 #Change dependant on the model to load whether it was trained with one or 2 input channels
-
-t = time.time()
-mainMethod(nrInputChannels, VALID_INPUT_DIR, VALID_MASK_DIR, VALID_SLICE_DIR)
-#mainMethod(nrInputChannels, VALID_INPUT_DIR_oneperson, VALID_MASK_DIR_oneperson, VALID_SLICE_DIR_oneperson)
-elapsed = time.time()-t
-print("Runtime total, in hours: " , elapsed/(60*60))
-plt.show()
+for i in range(1,2):
+    SIZE_PR_MASK = []
+    p = "Person"+str(i)
+    TEST_INPUT_DIR_oneperson = "C:/Users/Bruger/Desktop/MRI/Eksamen_MRI_billeder/img_IBS/ImgPersons/"+p
+    TEST_MASK_DIR_oneperson ="C:/Users/Bruger/Desktop/MRI/Eksamen_MRI_billeder/img_IBS/MaskPersons/"+p
+    TEST_SLICE_DIR_oneperson ="C:/Users/Bruger/Desktop/MRI/Test/SliceNr_testPersons/"+p
+    
+    
+    nrInputChannels = 1 #Change dependant on the model to load whether it was trained with one or 2 input channels
+    
+    t = time.time()
+    mainMethod(nrInputChannels, TEST_INPUT_DIR, TEST_MASK_DIR, TEST_SLICE_DIR)#For imagewise DSC (entire folder)
+    #mainMethod(nrInputChannels, TEST_INPUT_DIR_oneperson, TEST_MASK_DIR_oneperson, TEST_SLICE_DIR_oneperson) #For one person at a time
+    
+    #mainMethod(nrInputChannels, VALID_INPUT_DIR, VALID_MASK_DIR, VALID_SLICE_DIR)
+    #mainMethod(nrInputChannels, VALID_INPUT_DIR_oneperson, VALID_MASK_DIR_oneperson, VALID_SLICE_DIR_oneperson)
+    elapsed = time.time()-t
+    print("Runtime total, in hours: " , elapsed/(60*60), "for person ", p)
+    plt.show()
 print("Done")
